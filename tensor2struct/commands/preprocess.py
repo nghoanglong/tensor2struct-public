@@ -12,7 +12,8 @@ class Preprocessor:
     def __init__(self, config):
         self.config = config
         self.model_preproc = registry.instantiate(
-            registry.lookup("model", config["model"]).Preproc, config["model"]
+            registry.lookup("model", config["model"]).Preproc, 
+            config["model"]
         )
 
     def preprocess(self):

@@ -12,7 +12,6 @@ from experiments.spider_dg import (
     meta_train,
 )
 
-
 @attr.s
 class TrainConfig:
     config = attr.ib()
