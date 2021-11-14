@@ -580,7 +580,7 @@ class Vitext2sqlEncoderPhoBertPreproc(abstract_preproc.AbstractPreproc):
             + sum(len(c.name) for c in item.schema.columns)
             + sum(len(t.name) for t in item.schema.tables)
         )
-        if num_words > 256:
+        if num_words > 512:
             logger.info(f"Found long seq in {item.schema.db_id}")
             return False, None
         else:
@@ -636,7 +636,7 @@ class Vitext2sqlEncoderPhoBertPreproc(abstract_preproc.AbstractPreproc):
             cv_relations = {"num_date_match": {}, "cell_match": {}}
 
         return {
-            "question_text": item.orgi['question'],
+            "question_text": item.orig['question'],
             "question_for_copying": question_for_copying,
             "db_id": item.schema.db_id,
             "schema_relations": schema_relations,

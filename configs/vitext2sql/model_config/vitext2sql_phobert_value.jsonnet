@@ -44,7 +44,7 @@ function(args, data_path=_data_path) spider_base(args, data_path=_data_path) {
         },
         encoder_preproc: {
             context: {
-                "name": "vitext2sql-bert",
+                "name": "vitext2sql-phobert",
                 db_paths: [
                     _data_path + "raw/database"
                 ],
