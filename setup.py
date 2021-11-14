@@ -47,6 +47,7 @@ setup(
         "pytest~=5.4.1",
         "pyrsistent~=0.14.9",
         "unidecode~=1.1.1",
+        'vncorenlp~=1.0.3',
     ],
     entry_points={"console_scripts": ["tensor2struct=tensor2struct.commands.run:main"]},
 )

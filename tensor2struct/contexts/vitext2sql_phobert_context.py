@@ -33,6 +33,8 @@ class Vitext2SQLPhoBertContext(SpiderContext):
         self.schema = schema
         preproc_schema = self.preprocess_schema(self.schema)
         self.preproc_schema = preproc_schema
+        self.columns = [col[1:] for col in preproc_schema.column_names]
+        self.tables = preproc_schema.table_names
 
         self.db_dirs = db_paths
 

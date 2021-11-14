@@ -3,14 +3,14 @@ local spider_base = import "vitext2sql_base.libsonnet";
 
 function(args, data_path=_data_path) spider_base(args, data_path=_data_path) {
     data: {
-        local PREFIX = data_path + "raw/",
+        local PREFIX = data_path,
         local ts = if $.args.use_other_train then
             ['vitext2sql']
         else
             ['vitext2sql'],
 
         train: {
-            name: 'vitetx2sql', 
+            name: 'vitext2sql', 
             paths: [
               PREFIX + 'train_%s.json' % [s]
               for s in ts],

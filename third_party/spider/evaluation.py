@@ -19,19 +19,18 @@
 # }
 ################################
 
-import os, sys
-import json
-import sqlite3
-import traceback
 import argparse
+import json
+import os
+import sqlite3
 
+from tensor2struct.datasets.vitext2sql import format_entity
 from third_party.spider.process_sql import tokenize, get_schema, get_tables_with_alias, Schema, get_sql
 
 # Flag to disable value evaluation
 DISABLE_VALUE = True
 # Flag to disable distinct in select evaluation
 DISABLE_DISTINCT = True
-
 
 CLAUSE_KEYWORDS = ('select', 'from', 'where', 'group', 'order', 'limit', 'intersect', 'union', 'except')
 JOIN_KEYWORDS = ('join', 'on', 'as')
@@ -48,7 +47,6 @@ COND_OPS = ('and', 'or')
 SQL_OPS = ('intersect', 'union', 'except')
 ORDER_OPS = ('desc', 'asc')
 
-
 HARDNESS = {
     "component1": ('where', 'group', 'order', 'limit', 'join', 'or', 'like'),
     "component2": ('except', 'union', 'intersect')
@@ -57,6 +55,7 @@ HARDNESS = {
 LEVELS = ['easy', 'medium', 'hard', 'extra', 'all']
 PARTIAL_TYPES = ['select', 'select(no AGG)', 'where', 'where(no OP)', 'group(no Having)',
                  'group', 'order', 'and/or', 'IUEN', 'keywords']
+
 
 def condition_has_or(conds):
     return 'or' in conds[1::2]
@@ -104,10 +103,10 @@ def F1(acc, rec):
 
 def get_scores(count, pred_total, label_total):
     if pred_total != label_total:
-        return 0,0,0
+        return 0, 0, 0
     elif count == pred_total:
-        return 1,1,1
-    return 0,0,0
+        return 1, 1, 1
+    return 0, 0, 0
 
 
 def eval_sel(pred, label):
@@ -189,7 +188,8 @@ def eval_order(pred, label):
     if len(label['orderBy']) > 0:
         label_total = 1
     if len(label['orderBy']) > 0 and pred['orderBy'] == label['orderBy'] and \
-            ((pred['limit'] is None and label['limit'] is None) or (pred['limit'] is not None and label['limit'] is not None)):
+            ((pred['limit'] is None and label['limit'] is None) or (
+                    pred['limit'] is not None and label['limit'] is not None)):
         cnt = 1
     return label_total, pred_total, cnt
 
@@ -201,8 +201,8 @@ def eval_and_or(pred, label):
     label_ao = set(label_ao)
 
     if pred_ao == label_ao:
-        return 1,1,1
-    return len(pred_ao),len(label_ao),0
+        return 1, 1, 1
+    return len(pred_ao), len(label_ao), 0
 
 
 def get_nestedSQL(sql):
@@ -337,7 +337,7 @@ def count_others(sql):
     agg_count += count_agg(sql['groupBy'])
     if len(sql['orderBy']) > 0:
         agg_count += count_agg([unit[1] for unit in sql['orderBy'][1] if unit[1]] +
-                            [unit[2] for unit in sql['orderBy'][1] if unit[2]])
+                               [unit[2] for unit in sql['orderBy'][1] if unit[2]])
     agg_count += count_agg(sql['having'])
     if agg_count > 1:
         count += 1
@@ -359,23 +359,26 @@ def count_others(sql):
 
 class Evaluator:
     """A simple evaluator"""
-    def __init__(self, db_dir, kmaps, etype):
+
+    def __init__(self, db_dir, kmaps, etype, schema_path):
         self.db_dir = db_dir
         self.kmaps = kmaps
         self.etype = etype
 
         self.db_paths = {}
         self.schemas = {}
+        all_schemas_got = self.get_all_schemas(schema_path[0])
         for db_name in self.kmaps.keys():
             db_path = os.path.join(db_dir, db_name, db_name + '.sqlite')
             self.db_paths[db_name] = db_path
-            self.schemas[db_name] = Schema(get_schema(db_path))
+            # self.schemas[db_name] = Schema(get_schema(db_path)) -> Spider
+            self.schemas[db_name] = Schema(all_schemas_got[db_name])
 
         self.scores = {
             level: {
                 'count': 0,
                 'partial': {
-                    type_: {'acc': 0., 'rec': 0., 'f1': 0.,'acc_count': 0,'rec_count': 0}
+                    type_: {'acc': 0., 'rec': 0., 'f1': 0., 'acc_count': 0, 'rec_count': 0}
                     for type_ in PARTIAL_TYPES
                 },
                 'exact': 0.,
@@ -384,8 +387,7 @@ class Evaluator:
             for level in LEVELS
         }
 
-    @staticmethod
-    def eval_hardness(sql):
+    def eval_hardness(self, sql):
         count_comp1_ = count_component1(sql)
         count_comp2_ = count_component2(sql)
         count_others_ = count_others(sql)
@@ -419,43 +421,50 @@ class Evaluator:
 
         label_total, pred_total, cnt, cnt_wo_agg = eval_sel(pred, label)
         acc, rec, f1 = get_scores(cnt, pred_total, label_total)
-        res['select'] = {'acc': acc, 'rec': rec, 'f1': f1,'label_total':label_total,'pred_total':pred_total}
+        res['select'] = {'acc': acc, 'rec': rec, 'f1': f1, 'label_total': label_total, 'pred_total': pred_total}
         acc, rec, f1 = get_scores(cnt_wo_agg, pred_total, label_total)
-        res['select(no AGG)'] = {'acc': acc, 'rec': rec, 'f1': f1,'label_total':label_total,'pred_total':pred_total}
+        res['select(no AGG)'] = {'acc': acc, 'rec': rec, 'f1': f1, 'label_total': label_total, 'pred_total': pred_total}
 
         label_total, pred_total, cnt, cnt_wo_agg = eval_where(pred, label)
         acc, rec, f1 = get_scores(cnt, pred_total, label_total)
-        res['where'] = {'acc': acc, 'rec': rec, 'f1': f1,'label_total':label_total,'pred_total':pred_total}
+        res['where'] = {'acc': acc, 'rec': rec, 'f1': f1, 'label_total': label_total, 'pred_total': pred_total}
         acc, rec, f1 = get_scores(cnt_wo_agg, pred_total, label_total)
-        res['where(no OP)'] = {'acc': acc, 'rec': rec, 'f1': f1,'label_total':label_total,'pred_total':pred_total}
+        res['where(no OP)'] = {'acc': acc, 'rec': rec, 'f1': f1, 'label_total': label_total, 'pred_total': pred_total}
 
         label_total, pred_total, cnt = eval_group(pred, label)
         acc, rec, f1 = get_scores(cnt, pred_total, label_total)
-        res['group(no Having)'] = {'acc': acc, 'rec': rec, 'f1': f1,'label_total':label_total,'pred_total':pred_total}
+        res['group(no Having)'] = {'acc': acc, 'rec': rec, 'f1': f1, 'label_total': label_total,
+                                   'pred_total': pred_total}
 
         label_total, pred_total, cnt = eval_having(pred, label)
         acc, rec, f1 = get_scores(cnt, pred_total, label_total)
-        res['group'] = {'acc': acc, 'rec': rec, 'f1': f1,'label_total':label_total,'pred_total':pred_total}
+        res['group'] = {'acc': acc, 'rec': rec, 'f1': f1, 'label_total': label_total, 'pred_total': pred_total}
 
         label_total, pred_total, cnt = eval_order(pred, label)
         acc, rec, f1 = get_scores(cnt, pred_total, label_total)
-        res['order'] = {'acc': acc, 'rec': rec, 'f1': f1,'label_total':label_total,'pred_total':pred_total}
+        res['order'] = {'acc': acc, 'rec': rec, 'f1': f1, 'label_total': label_total, 'pred_total': pred_total}
 
         label_total, pred_total, cnt = eval_and_or(pred, label)
         acc, rec, f1 = get_scores(cnt, pred_total, label_total)
-        res['and/or'] = {'acc': acc, 'rec': rec, 'f1': f1,'label_total':label_total,'pred_total':pred_total}
+        res['and/or'] = {'acc': acc, 'rec': rec, 'f1': f1, 'label_total': label_total, 'pred_total': pred_total}
 
         label_total, pred_total, cnt = eval_IUEN(pred, label)
         acc, rec, f1 = get_scores(cnt, pred_total, label_total)
-        res['IUEN'] = {'acc': acc, 'rec': rec, 'f1': f1,'label_total':label_total,'pred_total':pred_total}
+        res['IUEN'] = {'acc': acc, 'rec': rec, 'f1': f1, 'label_total': label_total, 'pred_total': pred_total}
 
         label_total, pred_total, cnt = eval_keywords(pred, label)
         acc, rec, f1 = get_scores(cnt, pred_total, label_total)
-        res['keywords'] = {'acc': acc, 'rec': rec, 'f1': f1,'label_total':label_total,'pred_total':pred_total}
+        res['keywords'] = {'acc': acc, 'rec': rec, 'f1': f1, 'label_total': label_total, 'pred_total': pred_total}
 
         return res
 
     def evaluate_one(self, db_name, gold, predicted):
+        def concatenate_toks(query_toks):
+            decor_toks = map(lambda tok: tok.replace(" ", "_") if "\"" not in tok else tok, query_toks)
+            res = " ".join(decor_toks)
+            return res
+
+        gold = concatenate_toks(gold)
         schema = self.schemas[db_name]
         g_sql = get_sql(schema, gold)
         hardness = self.eval_hardness(g_sql)
@@ -468,22 +477,22 @@ class Evaluator:
         except:
             # If p_sql is not valid, then we will use an empty sql to evaluate with the correct sql
             p_sql = {
-            "except": None,
-            "from": {
-                "conds": [],
-                "table_units": []
-            },
-            "groupBy": [],
-            "having": [],
-            "intersect": None,
-            "limit": None,
-            "orderBy": [],
-            "select": [
-                False,
-                []
-            ],
-            "union": None,
-            "where": []
+                "except": None,
+                "from": {
+                    "conds": [],
+                    "table_units": []
+                },
+                "groupBy": [],
+                "having": [],
+                "intersect": None,
+                "limit": None,
+                "orderBy": [],
+                "select": [
+                    False,
+                    []
+                ],
+                "union": None,
+                "where": []
             }
 
             # TODO fix
@@ -499,13 +508,7 @@ class Evaluator:
         p_sql = rebuild_sql_col(p_valid_col_units, p_sql, kmap)
 
         if self.etype in ["all", "exec"]:
-            # added by bailin
-            exe_flag = eval_exec_match(self.db_paths[db_name], predicted, gold, p_sql, g_sql)
-            if exe_flag:
-                self.scores[hardness]['exec'] += 1.0
-                self.scores['all']['exec'] += 1.0
-        else:
-            exe_flag = None
+            self.scores[hardness]['exec'] += eval_exec_match(self.db_paths[db_name], predicted, gold, p_sql, g_sql)
 
         if self.etype in ["all", "match"]:
             partial_scores = self.eval_partial_match(p_sql, g_sql)
@@ -527,14 +530,10 @@ class Evaluator:
                     self.scores['all']['partial'][type_]['rec'] += partial_scores[type_]['rec']
                     self.scores['all']['partial'][type_]['rec_count'] += 1
                 self.scores['all']['partial'][type_]['f1'] += partial_scores[type_]['f1']
-        else:
-            exact_score = None
-            partial_scores = None
 
         return {
             'predicted': predicted,
             'gold': gold,
-            'execution': exe_flag,
             'predicted_parse_error': parse_error,
             'hardness': hardness,
             'exact': exact_score,
@@ -567,18 +566,35 @@ class Evaluator:
                     else:
                         scores[level]['partial'][type_]['f1'] = \
                             2.0 * scores[level]['partial'][type_]['acc'] * scores[level]['partial'][type_]['rec'] / (
-                            scores[level]['partial'][type_]['rec'] + scores[level]['partial'][type_]['acc'])
+                                    scores[level]['partial'][type_]['rec'] + scores[level]['partial'][type_]['acc'])
+    
+    def get_all_schemas(self, schema_path):
+        with open(schema_path) as f:
+            database_schemas = json.load(f)
+        all_schemas_got = {}
+        for schema in database_schemas:
+            temp_schema = {}
+            database_name = schema['db_id']
+            li_tables = schema['table_names']
+            for _, (table_id, column_name) in enumerate(schema['column_names']):
+                if table_id >= 0:
+                    if format_entity(li_tables[table_id]) not in temp_schema:
+                        temp_schema[format_entity(li_tables[table_id])] = []
+                        temp_schema[format_entity(li_tables[table_id])].append(format_entity(column_name))
+                    else:
+                        temp_schema[format_entity(li_tables[table_id])].append(format_entity(column_name))
+            all_schemas_got[database_name] = temp_schema
+        return all_schemas_got
 
 
-    def isValidSQL(self, sql, db_id):
-        db = self.db_paths[db_id]
-        conn = sqlite3.connect(db)
-        cursor = conn.cursor()
-        try:
-            cursor.execute(sql)
-        except:
-            return False
-        return True
+def isValidSQL(sql, db):
+    conn = sqlite3.connect(db)
+    cursor = conn.cursor()
+    try:
+        cursor.execute(sql)
+    except:
+        return False
+    return True
 
 
 def print_scores(scores, etype):
@@ -644,7 +660,6 @@ def eval_exec_match(db, p_str, g_str, pred, gold):
     in the corresponding index. Currently not support multiple col_unit(pairs).
     """
     conn = sqlite3.connect(db)
-    conn.text_factory = bytes #handle encoding errors
     cursor = conn.cursor()
     try:
         cursor.execute(p_str)
@@ -715,7 +730,7 @@ def rebuild_sql_val(sql):
 def build_valid_col_units(table_units, schema):
     col_ids = [table_unit[1] for table_unit in table_units if table_unit[0] == TABLE_TYPE['table_unit']]
     prefixs = [col_id[:-2] for col_id in col_ids]
-    valid_col_units= []
+    valid_col_units = []
     for value in list(schema.idMap.values()):
         if '.' in value and value[:value.index('.')] in prefixs:
             valid_col_units.append(value)
@@ -787,7 +802,8 @@ def rebuild_from_col(valid_col_units, from_, kmap):
     if from_ is None:
         return from_
 
-    from_['table_units'] = [rebuild_table_unit_col(valid_col_units, table_unit, kmap) for table_unit in from_['table_units']]
+    from_['table_units'] = [rebuild_table_unit_col(valid_col_units, table_unit, kmap) for table_unit in
+                            from_['table_units']]
     from_['conds'] = rebuild_condition_col(valid_col_units, from_['conds'], kmap)
     return from_
 
@@ -864,6 +880,44 @@ def build_foreign_key_map(entry):
 
     return foreign_key_map
 
+def build_foreign_key_map_vitext2sql(entry):
+    cols_orig = entry["column_names_original"]
+    tables_orig = entry["table_names_original"]
+
+    # rebuild cols corresponding to idmap in Schema
+    cols = []
+    for col_orig in cols_orig:
+        if col_orig[0] >= 0:
+            t = format_entity(tables_orig[col_orig[0]])
+            c = format_entity(col_orig[1])
+            cols.append("__" + t.lower() + "." + c.lower() + "__")
+        else:
+            cols.append("__all__")
+
+    def keyset_in_list(k1, k2, k_list):
+        for k_set in k_list:
+            if k1 in k_set or k2 in k_set:
+                return k_set
+        new_k_set = set()
+        k_list.append(new_k_set)
+        return new_k_set
+
+    foreign_key_list = []
+    foreign_keys = entry["foreign_keys"]
+    for fkey in foreign_keys:
+        key1, key2 = fkey
+        key_set = keyset_in_list(key1, key2, foreign_key_list)
+        key_set.add(key1)
+        key_set.add(key2)
+
+    foreign_key_map = {}
+    for key_set in foreign_key_list:
+        sorted_list = sorted(list(key_set))
+        midx = sorted_list[0]
+        for idx in sorted_list:
+            foreign_key_map[cols[idx]] = cols[midx]
+
+    return foreign_key_map
 
 def build_foreign_key_map_from_json(table):
     with open(table) as f:

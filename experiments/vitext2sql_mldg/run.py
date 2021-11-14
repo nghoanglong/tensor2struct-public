@@ -6,9 +6,6 @@ import json
 import argparse
 import attr
 import wandb
-import sys
-
-sys.path.insert(1, '../../tensor2struct-public')
 
 from experiments.spider_dg import (
     train,
@@ -41,6 +38,7 @@ def main():
         "mode", choices=["preprocess", "train", "meta_train", "eval"], help="train/meta_train/dist_train",
     )
     parser.add_argument("exp_config_file", help="jsonnet file for experiments")
+    parser.add_argument('--model_config_args', help="optional overrides for model config args")
     parser.add_argument("--logdir", help="optional override for logdir")
     args = parser.parse_args()
 
