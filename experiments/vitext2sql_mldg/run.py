@@ -6,6 +6,9 @@ import json
 import argparse
 import attr
 import wandb
+import sys
+
+sys.path.insert(1, '../../tensor2struct-public')
 
 from experiments.spider_dg import (
     train,
