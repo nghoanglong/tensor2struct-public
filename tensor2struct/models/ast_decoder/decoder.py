@@ -10,6 +10,8 @@ import re
 import copy
 import random
 
+from networkx.algorithms.similarity import simrank_similarity
+
 import asdl
 import attr
 import pyrsistent
@@ -1122,3 +1124,4 @@ class NL2CodeDecoderV2(torch.nn.Module):
             f"align column loss: {align_col_loss.item()}, align tab loss: {align_tab_loss.item()}"
         )
         return align_loss
+

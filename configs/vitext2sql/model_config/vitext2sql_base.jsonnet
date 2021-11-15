@@ -1,10 +1,9 @@
 # args of the function will have a default value
 # so that we could balance flexibility and inherintance
 
-local _data_path = 'data/spider/';
+function(args={}, data_path='data/spider/') {
+    local _data_path = data_path;
 
-function(args={}, data_path=_data_path) {
-    
     # default args
     local _default_args = {
         # model

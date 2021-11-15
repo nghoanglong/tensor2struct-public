@@ -559,14 +559,9 @@ class Vitext2sqlEncoderPhoBertPreproc(abstract_preproc.AbstractPreproc):
         # column_types = ["text", "number", "time", "boolean", "others"]
         # self.tokenizer.add_tokens([f"<type: {t}>" for t in column_types])
         self.tokenizer_config = bert_version  # lazy init
+        self.tokenizer = AutoTokenizer.from_pretrained(self.tokenizer_config)
 
         self.context_cache = {}
-
-    @property
-    def tokenizer(self):
-        if not hasattr(self, "_tokenizer"):
-            self._tokenizer = AutoTokenizer.from_pretrained(self.tokenizer_config)
-        return self._tokenizer
 
     def _tokenize(self, presplit, unsplit):
         toks = vncorenlp.tokenize(unsplit)
@@ -668,6 +663,7 @@ class Vitext2sqlEncoderPhoBertPreproc(abstract_preproc.AbstractPreproc):
             with open(os.path.join(self.data_dir, section + ".jsonl"), "w", encoding='utf-8') as f:
                 for text in texts:
                     f.write(json.dumps(text, ensure_ascii=False) + "\n")
+        return
 
     def load(self):
         # self.tokenizer = BertTokenizer.from_pretrained(self.data_dir)
@@ -697,7 +693,7 @@ class Vitext2SQLEncoderPhoBert(torch.nn.Module):
         device,
         preproc,
         bert_token_type=False,
-        bert_version="bert-base-uncased",
+        bert_version="vinai/phobert-large",
         summarize_header="avg",
         include_in_memory=("question", "column", "table"),
         rat_config={},
@@ -708,7 +704,7 @@ class Vitext2SQLEncoderPhoBert(torch.nn.Module):
         self.preproc = preproc
         self.bert_token_type = bert_token_type
         self.base_enc_hidden_size = (
-            1024 if "large" in bert_version else 768
+            1024 if bert_version == "vinai/phobert-large" else 768
         )
         self.include_in_memory = include_in_memory
 
@@ -741,13 +737,7 @@ class Vitext2SQLEncoderPhoBert(torch.nn.Module):
             enable_latent_relations=False,
         )
 
-        if "electra" in bert_version:
-            modelclass = ElectraModel
-        elif "bert" in bert_version:
-            modelclass = BertModel
-        else:
-            raise NotImplementedError
-        self.bert_model = modelclass.from_pretrained(bert_version)
+        self.phobert_model = AutoModel.from_pretrained(bert_version)
         self.tokenizer = self.preproc.tokenizer
         # self.bert_model.resize_token_embeddings(
         #    len(self.tokenizer)
@@ -775,7 +765,7 @@ class Vitext2SQLEncoderPhoBert(torch.nn.Module):
                 qs + [c for col in cols for c in col] + [t for tab in tabs for t in tab]
             )
             assert self.tokenizer.check_bert_input_seq(token_list)
-            if len(token_list) > 512:
+            if len(token_list) > 256:
                 long_seq_set.add(batch_idx)
                 continue
 
@@ -823,23 +813,23 @@ class Vitext2SQLEncoderPhoBert(torch.nn.Module):
             padded_token_lists,
             att_mask_lists,
             tok_type_lists,
-        ) = self.tokenizer.pad_sequence_for_bert_batch(batch_token_lists)
+        ) = self.pad_sequence_for_bert_batch(batch_token_lists)
         tokens_tensor = torch.LongTensor(padded_token_lists).to(self._device)
         att_masks_tensor = torch.LongTensor(att_mask_lists).to(self._device)
 
         if self.bert_token_type:
             tok_type_tensor = torch.LongTensor(tok_type_lists).to(self._device)
-            bert_output = self.bert_model(
+            phobert_output = self.phobert_model(
                 tokens_tensor,
                 attention_mask=att_masks_tensor,
                 token_type_ids=tok_type_tensor,
             )[0]
         else:
-            bert_output = self.bert_model(
+            phobert_output = self.phobert_model(
                 tokens_tensor, attention_mask=att_masks_tensor
             )[0]
 
-        enc_output = bert_output
+        enc_output = phobert_output
 
         column_pointer_maps = [
             {i: [i] for i in range(len(desc["columns"]))} for desc in descs
@@ -848,7 +838,7 @@ class Vitext2SQLEncoderPhoBert(torch.nn.Module):
             {i: [i] for i in range(len(desc["tables"]))} for desc in descs
         ]
 
-        assert len(long_seq_set) == 0  # remove them for now
+        # assert len(long_seq_set) == 0  # remove them for now
 
         # 2) rat update
         result = []
@@ -933,3 +923,61 @@ class Vitext2SQLEncoderPhoBert(torch.nn.Module):
                 )
             )
         return result
+
+    def encoder_long_seq(self, desc):
+            """
+            Since phobert cannot handle sequence longer than 256, each column/table is encoded individually
+            The representation of a column/table is the vector of the first token [CLS]
+            """
+            qs = self.pad_single_sentence_for_bert(desc['question'], cls=True)
+            cols = [self.pad_single_sentence_for_bert(c, cls=True) for c in desc['columns']]
+            tabs = [self.pad_single_sentence_for_bert(t, cls=True) for t in desc['tables']]
+
+            enc_q = self._bert_encode(qs)
+            enc_col = self._bert_encode(cols)
+            enc_tab = self._bert_encode(tabs)
+            return enc_q, enc_col, enc_tab
+    
+    def _bert_encode(self, toks):
+        if not isinstance(toks[0], list):  # encode question words
+            indexed_tokens = self.tokenizer.convert_tokens_to_ids(toks)
+            tokens_tensor = torch.tensor([indexed_tokens]).to(self._device)
+            outputs = self.phobert_model(tokens_tensor)
+            return outputs[0][0, 1:-1]  # remove [CLS] and [SEP]
+        else:
+            max_len = max([len(it) for it in toks])
+            tok_ids = []
+            for item_toks in toks:
+                item_toks = item_toks + [self.tokenizer.pad_token] * (max_len - len(item_toks))
+                indexed_tokens = self.tokenizer.convert_tokens_to_ids(item_toks)
+                tok_ids.append(indexed_tokens)
+
+            tokens_tensor = torch.tensor(tok_ids).to(self._device)
+            outputs = self.phobert_model(tokens_tensor)
+            return outputs[0][:, 0, :]
+    
+    def pad_single_sentence_for_bert(self, toks, cls=True):
+        if cls:
+            return [self.tokenizer.cls_token] + toks + [self.tokenizer.sep_token]
+        else:
+            return toks + [self.tokenizer.sep_token]
+    
+    def pad_sequence_for_bert_batch(self, tokens_lists):
+        pad_id = self.tokenizer.pad_token_id
+        max_len = max([len(it) for it in tokens_lists])
+        assert max_len <= 256
+        toks_ids = []
+        att_masks = []
+        tok_type_lists = []
+        for item_toks in tokens_lists:
+            padded_item_toks = item_toks + [pad_id] * (max_len - len(item_toks))
+            toks_ids.append(padded_item_toks)
+
+            _att_mask = [1] * len(item_toks) + [0] * (max_len - len(item_toks))
+            att_masks.append(_att_mask)
+
+            first_sep_id = padded_item_toks.index(self.tokenizer.sep_token_id)
+            assert first_sep_id > 0
+            _tok_type_list = [0] * (first_sep_id + 1) + [1] * (max_len - first_sep_id - 1)
+            tok_type_lists.append(_tok_type_list)
+        return toks_ids, att_masks, tok_type_lists
