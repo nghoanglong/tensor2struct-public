@@ -27,7 +27,7 @@ from tensor2struct.utils import registry, vocab, serialization
 from tensor2struct.models.ast_decoder.tree_traversal import TreeTraversal, TreeState
 from tensor2struct.models.ast_decoder.train_tree_traversal import TrainTreeTraversal
 from tensor2struct.models.ast_decoder.infer_tree_traversal import InferenceTreeTraversal
-from tensor2struct.modules import lstm, bert_tokenizer
+from tensor2struct.modules import lstm, phobert_tokenizer
 from tensor2struct.models.ast_decoder.utils import (
     accumulate_logprobs,
     maybe_stack,
@@ -87,7 +87,7 @@ class NL2CodeDecoderPreproc(abstract_preproc.AbstractPreproc):
     def value_tokenizer(self):
         if not hasattr(self, "_value_tokenizer"):
             if self.value_tokenizer_config is not None:
-                self._value_tokenizer = bert_tokenizer.BERTokenizer(
+                self._value_tokenizer = phobert_tokenizer.PhoBERTokenizer(
                     self.value_tokenizer_config
                 )
             else:

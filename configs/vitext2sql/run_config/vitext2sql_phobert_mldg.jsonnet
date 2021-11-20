@@ -15,8 +15,8 @@
         loss_type: "softmax", # softmax, label_smooth
 
         # bert
-        opt: "torchAdamw",   # bertAdamw, torchAdamw
-        lr_scheduler: "bert_warmup_polynomial_group_v2", # bert_warmup_polynomial_group,bert_warmup_polynomial_grou_v2
+        opt: "phobertAdamw",   # bertAdamw, torchAdamw
+        lr_scheduler: "phobert_warmup_polynomial_group", # bert_warmup_polynomial_group,bert_warmup_polynomial_grou_v2
         bert_token_type: false,
         bert_version: "vinai/phobert-large",
         bert_lr: 2e-5, 
