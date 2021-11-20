@@ -1,4 +1,4 @@
-local spider_base = import "../model_config/vitext2sql_base.libsonnet";
+local spider_base = import "vitext2sql_base.jsonnet";
 
 function(args) spider_base(args, data_path=args.data_path) {
     local data_path = args.data_path,

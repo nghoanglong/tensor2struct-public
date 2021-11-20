@@ -2,7 +2,7 @@
 # so that we could balance flexibility and inherintance
 
 function(args={}, data_path='data/spider/') {
-    local _data_path = data_path;
+    local _data_path = data_path,
 
     # default args
     local _default_args = {
