@@ -601,7 +601,7 @@ class Vitext2sqlEncoderPhoBertPreproc(abstract_preproc.AbstractPreproc):
         # use the original words for copying, while they are not necessarily used for encoding
         # question_for_copying = self.tokenizer.tokenize_and_lemmatize(q_text)
         question_for_copying = self._tokenize(item.text, item.orig['question'])
-
+        q_text = " ".join(item.text)
         if item.schema.db_id in self.context_cache:
             context = self.context_cache[item.schema.db_id]
         else:
@@ -614,21 +614,13 @@ class Vitext2sqlEncoderPhoBertPreproc(abstract_preproc.AbstractPreproc):
             self.context_cache[item.schema.db_id] = context
 
         preproc_schema = context.preproc_schema
-        question_phobert_tokens = PhoBertokens(question_for_copying)
-
         schema_relations = context.compute_schema_relations()
-        if self.compute_sc_link:
-            sc_relations = question_phobert_tokens.phobert_schema_linking(
-                preproc_schema.normalized_column_names,
-                preproc_schema.normalized_table_names
-            )
-        else:
-            sc_relations = {"q_col_match": {}, "q_tab_match": {}}
-        
-        if self.compute_cv_link:
-            cv_relations = question_phobert_tokens.phobert_cv_linking(item.schema)
-        else:
-            cv_relations = {"num_date_match": {}, "cell_match": {}}
+        sc_relations = (
+            context.compute_schema_linking(q_text) if self.compute_sc_link else {}
+        )
+        cv_relations = (
+            context.compute_cell_value_linking(q_text) if self.compute_cv_link else {}
+        )
 
         return {
             "question_text": item.orig['question'],
@@ -965,7 +957,7 @@ class Vitext2SQLEncoderPhoBert(torch.nn.Module):
             return [self.tokenizer.cls_token] + toks + [self.tokenizer.sep_token]
         else:
             return toks + [self.tokenizer.sep_token]
-            
+
     def check_bert_seq(self, toks):
         if toks[0] == self.tokenizer.cls_token and toks[-1] == self.tokenizer.sep_token:
             return True
