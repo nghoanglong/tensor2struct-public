@@ -154,7 +154,7 @@ class SpiderContext(abstract_context.AbstractContext):
                         relations[f"col-q:{column.type.upper()}"].append((col_id, q_id))
                 else:
                     ret = self.db_word_match(
-                        word, column.orig_name, column.table.orig_name, db_path
+                        word, column.orig_name, column.table.orig_name, schema.connection
                     )
                     if ret:
                         relations["q-col:CELLMATCH"].append((q_id, col_id))

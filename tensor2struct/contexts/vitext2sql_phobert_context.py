@@ -36,7 +36,7 @@ class Vitext2SQLPhoBertContext(SpiderContext):
         self.columns = [col[1:] for col in preproc_schema.column_names]
         self.tables = preproc_schema.table_names
 
-        self.db_dirs = db_paths
+        self.db_dir = db_paths
 
     def _normalize(self, sent_text, ret_meta=False):
         if not ret_meta:

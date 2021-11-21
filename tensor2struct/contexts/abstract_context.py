@@ -85,11 +85,10 @@ class AbstractContext(metaclass=abc.ABCMeta):
 
     @staticmethod
     @timeout_decorator.timeout(15)
-    def db_word_match(word, column, table, db_path):
+    def db_word_match(word, column, table, conn):
         """
         The order of decoder matters as staticmethod returns description not functions
         """
-        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
         p_str = f"select {column} from {table} where {column} like '{word} %' or {column} like '% {word}' or {column} like '% {word} %'  or {column} like '{word}'"
