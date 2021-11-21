@@ -601,7 +601,7 @@ class Vitext2sqlEncoderPhoBertPreproc(abstract_preproc.AbstractPreproc):
         # use the original words for copying, while they are not necessarily used for encoding
         # question_for_copying = self.tokenizer.tokenize_and_lemmatize(q_text)
         question_for_copying = self._tokenize(item.text, item.orig['question'])
-        q_text = " ".join(item.text)
+        q_text = question_for_copying
         if item.schema.db_id in self.context_cache:
             context = self.context_cache[item.schema.db_id]
         else:

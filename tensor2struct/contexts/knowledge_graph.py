@@ -32,7 +32,7 @@ class KnowledgeGraph:
                 self.section_ind2graph_ind[(section.name, i)] = base
                 self.graph_ind2section_ind[base] = (section.name, i)
                 base += 1
-
+        
         self.graph = np.full((self.item_num, self.item_num), -1, dtype=np.int64)
 
     def add_relations_to_graph(self, link_dic: Dict):

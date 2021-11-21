@@ -6,6 +6,7 @@ import sqlite3
 import timeout_decorator
 from typing import Dict, List, Union
 from tensor2struct.utils import string_utils
+import re
 
 # fmt: off
 _STOP_WORDS = {"", "", "all", "being", "-", "over", "through", "yourselves", "its", "before",
@@ -61,15 +62,12 @@ class AbstractContext(metaclass=abc.ABCMeta):
 
     @staticmethod
     def partial_match(x_list, y_list):
-        if len(x_list) == 1 and x_list[0] in STOP_WORDS:
+        x_str = " ".join(x_list)
+        y_str = " ".join(y_list)
+        if x_str in STOP_WORDS or x_str in PUNKS:
             return False
-        if len(x_list) == 1 and len(y_list) == 1:
-            return False
-        # x_str = "_".join([string_utils.normalize_string(x) for x in x_list])
-        # y_str = "_".join([string_utils.normalize_string(x) for x in y_list])
-        x_str = " " + " ".join(x_list) + " "
-        y_str = " " + " ".join(y_list) + " " 
-        if x_str in y_str and x_str != y_str:
+        if re.match(rf"\b{re.escape(x_str)}\b", y_str):
+            assert x_str in y_str
             return True
         else:
             return False

@@ -21,7 +21,7 @@ def get_graph_from_relations(desc, relations2id):
     question, columns, tables
     **MIND THE ORDER OF SECTIONS**
     """
-    sections = [("q", len(desc["question"]))]
+    sections = [("q", len(desc["question_for_copying"]))]
     if "columns" in desc:
         sections.append(("col", len(desc["columns"])))
     if "tables" in desc:
