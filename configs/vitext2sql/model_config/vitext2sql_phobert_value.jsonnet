@@ -74,12 +74,12 @@ function(args) spider_base(args, data_path=args.data_path) {
     optimizer: {
         name: $.args.opt,
         lr: 0.0,
-        bert_lr: 0.0,
+        phobert_lr: 0.0,
     },
 
     lr_scheduler+: {
         name: $.args.lr_scheduler,
-        start_lrs: [$.args.lr, $.args.bert_lr],
+        start_lrs: [$.args.lr, $.args.phobert_lr],
         end_lr: $.args.end_lr,
         num_warmup_steps: $.train.max_steps / 8,
     },

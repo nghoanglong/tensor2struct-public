@@ -14,12 +14,12 @@
         cv_link: true,
         loss_type: "softmax", # softmax, label_smooth
 
-        # bert
+        # phobert, opimizer
         opt: "phobertAdamw",   # bertAdamw, torchAdamw
         lr_scheduler: "phobert_warmup_polynomial_group", # bert_warmup_polynomial_group,bert_warmup_polynomial_grou_v2
         bert_token_type: false,
         bert_version: "vinai/phobert-large",
-        bert_lr: 2e-5, 
+        phobert_lr: 2e-5, 
 
         # grammar
         include_literals: true,

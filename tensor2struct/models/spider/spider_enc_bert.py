@@ -843,28 +843,32 @@ class Vitext2SQLEncoderPhoBert(torch.nn.Module):
         # 2) rat update
         result = []
         for batch_idx, desc in enumerate(descs):
-            # retrieve representations
-            bert_batch_idx = batch_id_map[batch_idx]
-            q_enc = enc_output[bert_batch_idx][
-                batch_id_to_retrieve_question[bert_batch_idx]
-            ]
-            col_enc = enc_output[bert_batch_idx][
-                batch_id_to_retrieve_column[bert_batch_idx]
-            ]
-            tab_enc = enc_output[bert_batch_idx][
-                batch_id_to_retrieve_table[bert_batch_idx]
-            ]
-
-            if self.summarize_header == "avg":
-                col_enc_2 = enc_output[bert_batch_idx][
-                    batch_id_to_retrieve_column_2[bert_batch_idx]
+            # xử lý sentence dài hơn độ dài phobert
+            if batch_idx in long_seq_set:
+                q_enc, col_enc, tab_enc = self.encoder_long_seq(desc)
+            else:
+                # retrieve representations
+                bert_batch_idx = batch_id_map[batch_idx]
+                q_enc = enc_output[bert_batch_idx][
+                    batch_id_to_retrieve_question[bert_batch_idx]
                 ]
-                tab_enc_2 = enc_output[bert_batch_idx][
-                    batch_id_to_retrieve_table_2[bert_batch_idx]
+                col_enc = enc_output[bert_batch_idx][
+                    batch_id_to_retrieve_column[bert_batch_idx]
+                ]
+                tab_enc = enc_output[bert_batch_idx][
+                    batch_id_to_retrieve_table[bert_batch_idx]
                 ]
 
-                col_enc = (col_enc + col_enc_2) / 2.0  # avg of first and last token
-                tab_enc = (tab_enc + tab_enc_2) / 2.0  # avg of first and last token
+                if self.summarize_header == "avg":
+                    col_enc_2 = enc_output[bert_batch_idx][
+                        batch_id_to_retrieve_column_2[bert_batch_idx]
+                    ]
+                    tab_enc_2 = enc_output[bert_batch_idx][
+                        batch_id_to_retrieve_table_2[bert_batch_idx]
+                    ]
+
+                    col_enc = (col_enc + col_enc_2) / 2.0  # avg of first and last token
+                    tab_enc = (tab_enc + tab_enc_2) / 2.0  # avg of first and last token
 
             words_for_copying = desc["question_for_copying"]
             assert q_enc.size()[0] == len(words_for_copying)

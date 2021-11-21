@@ -7,8 +7,7 @@ import argparse
 import attr
 import wandb
 
-from experiments.spider_dg import (
-    train,
+from experiments.vitext2sql_mldg import (
     meta_train,
 )
 from tensor2struct.commands import preprocess
@@ -68,10 +67,6 @@ def main():
     if args.mode == "preprocess":
         preprocess_config = PreprocessConfig(model_config_file, model_config_args)
         preprocess.main(preprocess_config)
-
-    elif args.mode == "train":
-        train_config = TrainConfig(model_config_file, model_config_args, logdir)
-        train.main(train_config)
     elif args.mode == "meta_train":
         train_config = MetaTrainConfig(model_config_file, model_config_args, logdir)
         meta_train.main(train_config)

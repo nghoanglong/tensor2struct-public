@@ -58,28 +58,29 @@ class MetaTrainer(meta_train.MetaTrainer):
             # 2. Outer optimizer
             # if config["optimizer"].get("name", None) in ["bertAdamw", "torchAdamw"]:
             if self.train_config.use_bert_training:
-                bert_params = self.model.get_bert_parameters()
-                non_bert_params = self.model.get_non_bert_parameters()
-                assert len(non_bert_params) + len(bert_params) == len(
-                    list(self.model.parameters())
-                )
-                assert len(bert_params) > 0
+                phobert_params = list(self.model.encoder.phobert_model.parameters())
+                assert len(phobert_params) > 0
+                non_phobert_params = []
+                for name, _param in self.model.named_parameters():
+                    if "phobert" not in name:
+                        non_phobert_params.append(_param)
+                assert len(non_phobert_params) + len(phobert_params) == len(list(self.model.parameters()))
                 self.logger.info(
-                    f"{len(bert_params)} BERT parameters and {len(non_bert_params)} non-BERT parameters"
+                    f"{len(phobert_params)} PhoBERT parameters and {len(non_phobert_params)} non-PhoBERT parameters"
                 )
 
                 optimizer = registry.construct(
                     "optimizer",
                     config["optimizer"],
-                    non_bert_params=non_bert_params,
-                    bert_params=bert_params,
+                    non_phobert_params=non_phobert_params,
+                    phobert_params=phobert_params,
                 )
                 lr_scheduler = registry.construct(
                     "lr_scheduler",
                     config.get("lr_scheduler", {"name": "noop"}),
                     param_groups=[
-                        optimizer.non_bert_param_group,
-                        optimizer.bert_param_group,
+                        optimizer.non_phobert_param_group,
+                        optimizer.phobert_param_group,
                     ],
                 )
             else:
