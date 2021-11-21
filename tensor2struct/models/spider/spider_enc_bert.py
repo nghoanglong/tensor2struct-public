@@ -757,14 +757,14 @@ class Vitext2SQLEncoderPhoBert(torch.nn.Module):
 
         # 1) retrieve bert pre-trained embeddings
         for batch_idx, desc in enumerate(descs):
-            qs = self.tokenizer.text_to_ids(desc["question_text"], cls=True)
-            cols = [self.tokenizer.text_to_ids(c, cls=False) for c in desc["columns"]]
-            tabs = [self.tokenizer.text_to_ids(t, cls=False) for t in desc["tables"]]
-
+            qs = self.pad_single_sentence_for_bert(desc['question_for_copying'], cls=True)
+            cols = [self.pad_single_sentence_for_bert([c], cls=True) for c in desc['columns']]
+            tabs = [self.pad_single_sentence_for_bert([t], cls=True) for t in desc['tables']]
+            
             token_list = (
                 qs + [c for col in cols for c in col] + [t for tab in tabs for t in tab]
             )
-            assert self.tokenizer.check_bert_input_seq(token_list)
+            assert self.check_bert_seq(token_list)
             if len(token_list) > 256:
                 long_seq_set.add(batch_idx)
                 continue
@@ -789,7 +789,7 @@ class Vitext2SQLEncoderPhoBert(torch.nn.Module):
                 ).tolist()[1:]
 
             # token_list is already indexed
-            indexed_token_list = token_list
+            indexed_token_list = self.tokenizer.convert_tokens_to_ids(token_list)
             batch_token_lists.append(indexed_token_list)
 
             # add index for retrieving representations
@@ -933,9 +933,9 @@ class Vitext2SQLEncoderPhoBert(torch.nn.Module):
             Since phobert cannot handle sequence longer than 256, each column/table is encoded individually
             The representation of a column/table is the vector of the first token [CLS]
             """
-            qs = self.pad_single_sentence_for_bert(desc['question'], cls=True)
-            cols = [self.pad_single_sentence_for_bert(c, cls=True) for c in desc['columns']]
-            tabs = [self.pad_single_sentence_for_bert(t, cls=True) for t in desc['tables']]
+            qs = self.pad_single_sentence_for_bert(desc['question_for_copying'], cls=True)
+            cols = [self.pad_single_sentence_for_bert([c], cls=True) for c in desc['columns']]
+            tabs = [self.pad_single_sentence_for_bert([t], cls=True) for t in desc['tables']]
 
             enc_q = self._bert_encode(qs)
             enc_col = self._bert_encode(cols)
@@ -965,7 +965,13 @@ class Vitext2SQLEncoderPhoBert(torch.nn.Module):
             return [self.tokenizer.cls_token] + toks + [self.tokenizer.sep_token]
         else:
             return toks + [self.tokenizer.sep_token]
-    
+            
+    def check_bert_seq(self, toks):
+        if toks[0] == self.tokenizer.cls_token and toks[-1] == self.tokenizer.sep_token:
+            return True
+        else:
+            return False
+
     def pad_sequence_for_bert_batch(self, tokens_lists):
         pad_id = self.tokenizer.pad_token_id
         max_len = max([len(it) for it in tokens_lists])
