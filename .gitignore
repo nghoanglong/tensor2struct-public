@@ -22,3 +22,5 @@ slurm_outputs/
 
 # third_party
 third_party/mosesdecoder
+
+third_party/error_check
