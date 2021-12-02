@@ -502,38 +502,6 @@ class PhoBertokens:
 
         self.normalized_pieces = normalized_toks
         self.recovered_pieces = new_toks
-    def phobert_schema_linking(self, columns, tables):
-        question_tokens = self.normalized_pieces
-        column_tokens = [c.normalized_pieces for c in columns]
-        table_tokens = [t.normalized_pieces for t in tables]
-        sc_link = compute_schema_linking(question_tokens, column_tokens, table_tokens)
-
-        new_sc_link = {}
-        for m_type in sc_link:
-            _match = {}
-            for ij_str in sc_link[m_type]:
-                q_id_str, col_tab_id_str = ij_str.split(",")
-                q_id, col_tab_id = int(q_id_str), int(col_tab_id_str)
-                real_q_id = self.idx_map[q_id]
-                _match[f"{real_q_id},{col_tab_id}"] = sc_link[m_type][ij_str]
-
-            new_sc_link[m_type] = _match
-        return new_sc_link
-
-    def phobert_cv_linking(self, schema):
-        question_tokens = self.recovered_pieces  # Not using normalized tokens here because values usually match exactly
-        cv_link = compute_cell_value_linking(question_tokens, schema)
-
-        new_cv_link = {}
-        for m_type in cv_link:
-            _match = {}
-            for ij_str in cv_link[m_type]:
-                q_id_str, col_tab_id_str = ij_str.split(",")
-                q_id, col_tab_id = int(q_id_str), int(col_tab_id_str)
-                real_q_id = self.idx_map[q_id]
-                _match[f"{real_q_id},{col_tab_id}"] = cv_link[m_type][ij_str]
-            new_cv_link[m_type] = _match
-        return new_cv_link
 
 
 
