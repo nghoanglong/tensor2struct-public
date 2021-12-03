@@ -387,6 +387,7 @@ class SpiderEncoderBert(torch.nn.Module):
             # TODO: change this, question is in the protocal of build relations
             desc["question"] = words_for_copying
             relation = self.schema_linking(desc)
+            
             (
                 q_enc_new_item,
                 c_enc_new_item,
