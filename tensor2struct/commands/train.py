@@ -50,6 +50,7 @@ class Trainer:
         self.init_random = random_state.RandomContext(self.train_config.init_seed)
 
         self.load_model(config)
+        wandb.init()
     
     def load_train_config(self):
         self.train_config = registry.instantiate(TrainConfig, self.config["train"])
@@ -250,9 +251,8 @@ class Trainer:
                 ", ".join("{} = {}".format(k, v) for k, v in stats.items()),
             )
         )
-        wandb.log(
-            {f"{eval_section}_eval_{k}": v for k, v in stats.items()}, step=last_step
-        )
+        kv_stats = ", ".join(f"{k} = {v}" for k, v in stats.items())
+        logger.log(logging.INFO,f"Step {last_step} stats, {eval_section}: {kv_stats}")
 
 
 def add_parser():
