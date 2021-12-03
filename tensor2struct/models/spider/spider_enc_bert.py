@@ -583,12 +583,19 @@ class Vitext2sqlEncoderPhoBertPreproc(abstract_preproc.AbstractPreproc):
 
         preproc_schema = context.preproc_schema
         schema_relations = context.compute_schema_relations()
-        sc_relations = (
-            context.compute_schema_linking(q_text) if self.compute_sc_link else {}
-        )
-        cv_relations = (
-            context.compute_cell_value_linking(q_text) if self.compute_cv_link else {}
-        )
+        if self.compute_sc_link:
+            sc_relations = (
+                context.compute_schema_linking(q_text, preproc_schema.normalized_column_names, preproc_schema.normalized_table_names)
+            )
+        else:
+            sc_relations = {}
+            
+        if self.compute_cv_link:
+            cv_relations = (
+                context.compute_cell_value_linking(q_text)
+            )
+        else:
+            cv_relations = {}
 
         return {
             "question_text": item.orig['question'],

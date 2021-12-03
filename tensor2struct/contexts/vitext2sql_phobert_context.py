@@ -90,10 +90,11 @@ class Vitext2SQLPhoBertContext(SpiderContext):
         ]
         return r
 
-    def compute_schema_linking(self, q_text):
+    def compute_schema_linking(self, q_text, columns, tables):
         normalize_ques = self._normalize(q_text)
         question = normalize_ques.normalized_pieces
-        column, table = self.columns, self.tables
+        column = [col.normalized_pieces for col in columns.normalized_column_names]
+        table = [tab.normalized_pieces for tab in tables.normalized_table_names]
         relations = collections.defaultdict(list)
 
         col_id2list = dict()
@@ -145,45 +146,32 @@ class Vitext2SQLPhoBertContext(SpiderContext):
         Utilize spacy for 1) stop words 2) number
         """
         normalize_sp_tokens = self._normalize(q_text)
-        sp_tokens = normalize_sp_tokens.recovered_pieces
-
+        tokens = normalize_sp_tokens.recovered_pieces
         schema = self.schema
-        db_dirs = self.db_dirs
-
-        db_name = schema.db_id
-        # find the db path
-        for db_dir in db_dirs:
-            db_path = os.path.join(db_dir, db_name, db_name + ".sqlite")
-            if os.path.exists(db_path):
-                break
-            else:
-                continue
 
         relations = collections.defaultdict(list)
-        for q_id, sp_token in enumerate(sp_tokens):
-            if sp_token.is_stop or sp_token.is_space:
+        for q_id, word in enumerate(tokens):
+            if len(word.strip()) == 0:
                 continue
+            if self.isstopword(word):
+                continue
+
+            num_flag, _ = self.isnumber(word)
 
             for col_id, column in enumerate(schema.columns):
                 if col_id == 0:
                     assert column.orig_name == "*"
                     continue
 
-                if sp_token.like_num:
+                # word is number
+                if num_flag:
                     if column.type in ["number", "time"]:  # TODO fine-grained date
                         relations[f"q-col:{column.type.upper()}"].append((q_id, col_id))
                         relations[f"col-q:{column.type.upper()}"].append((col_id, q_id))
                 else:
-                    word = sp_token.text  # use verbatim for value matching
-                    # word = sp_token.lemma_
-
-                    try:
-                        ret = self.db_word_match(
-                            word, column.orig_name, column.table.orig_name, db_path
-                        )
-                    except timeout_decorator.TimeoutError as e:
-                        ret = False
-
+                    ret = self.db_word_match(
+                        word, column.orig_name, column.table.orig_name, schema.connection
+                    )
                     if ret:
                         relations["q-col:CELLMATCH"].append((q_id, col_id))
                         relations["col-q:CELLMATCH"].append((col_id, q_id))
