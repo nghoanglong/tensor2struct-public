@@ -93,8 +93,8 @@ class Vitext2SQLPhoBertContext(SpiderContext):
     def compute_schema_linking(self, q_text, columns, tables):
         normalize_ques = self._normalize(q_text)
         question = normalize_ques.normalized_pieces
-        column = [col.normalized_pieces for col in columns.normalized_column_names]
-        table = [tab.normalized_pieces for tab in tables.normalized_table_names]
+        column = [col.normalized_pieces for col in columns]
+        table = [tab.normalized_pieces for tab in tables]
         relations = collections.defaultdict(list)
 
         col_id2list = dict()
