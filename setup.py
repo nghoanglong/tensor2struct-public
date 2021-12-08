@@ -39,6 +39,8 @@ setup(
         "tabulate~=0.8.6",
         "timeout-decorator~=0.4.1",
         "tqdm>=4.36.1",
+        "torch~=1.4.0",
+        "torchtext~=0.3.1",
         "transformers>=2.11.0",
         "wandb>=0.9.4",
         "pytest~=5.4.1",
