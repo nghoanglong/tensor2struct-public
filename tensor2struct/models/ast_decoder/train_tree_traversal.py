@@ -120,15 +120,19 @@ class TrainTreeTraversal(TreeTraversal):
         if last_choice is None:
             return
 
-        if self.kd_logits and isinstance(self.choice_point, self.XentChoicePoint):
+        # compute loss
+        nll_loss = self.choice_point.compute_loss(self, last_choice, extra_choice_info)
+        if self.kd_logits is not None and isinstance(self.choice_point, self.XentChoicePoint):
+            # pop one item
             cur_label = self.kd_logits[0]
             self.kd_logits = self.kd_logits[1:]
+            # print(f"Current {len(self.kd_logits)} items in kd logits ")
+
             kd_loss = self.choice_point.compute_kd_loss(self, cur_label)
             mixture_loss = self.lambda_mixture * nll_loss + (1 - self.lambda_mixture) * kd_loss
             self.loss = self.loss.append(mixture_loss)
-
-        self.loss = self.loss.append(
-            self.choice_point.compute_loss(self, last_choice, extra_choice_info))
+        else:
+            self.loss = self.loss.append(nll_loss)
 
         if self.record_logits and isinstance(self.choice_point, self.XentChoicePoint):
             logit_entry = LogitHistoryEntry(
@@ -137,9 +141,14 @@ class TrainTreeTraversal(TreeTraversal):
             )
             self.logits = self.logits.append(logit_entry)
 
+        # check if attention choice was used
         if attention_offset is not None and self.attention_choice is not None:
             self.loss = self.loss.append(
-                self.attention_choice.compute_loss(self, attention_offset, extra_indices=None))
+                self.attention_choice.compute_loss(
+                    self, attention_offset, extra_indices=None
+                )
+            )
 
+        # empty the choice point
         self.choice_point = None
         self.attention_choice = None
