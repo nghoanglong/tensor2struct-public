@@ -538,9 +538,9 @@ class NL2CodeDecoderV2(torch.nn.Module):
             ret_dic["initial_choices"] = initial_choices
         return ret_dic
 
-    def compute_loss(self, example, desc_enc):
+    def compute_loss(self, example, desc_enc, debug=False):
         if not self.enumerate_order or not self.training:
-            mle_loss = self.compute_mle_loss(example, desc_enc)
+            mle_loss = self.compute_mle_loss(example, desc_enc, debug=False)
         else:
             mle_loss = self.compute_loss_from_all_ordering(example, desc_enc)
 
@@ -607,10 +607,10 @@ class NL2CodeDecoderV2(torch.nn.Module):
         return torch.logsumexp(loss_v, 0)
 
     def compute_mle_loss(
-        self, example, desc_enc, record_logits=False, kd_logits=None, lambda_mixture=0.5
+        self, example, desc_enc, record_logits=False, kd_logits=None, lambda_mixture=0.5, debug=False
     ):
         traversal = TrainTreeTraversal(
-            self, desc_enc, record_logits=record_logits, lambda_mixture=lambda_mixture, kd_logits=kd_logits
+            self, desc_enc, debug, record_logits=record_logits, lambda_mixture=lambda_mixture, kd_logits=kd_logits
         )
         traversal.step(None)
         queue = [
