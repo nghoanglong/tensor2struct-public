@@ -68,9 +68,6 @@ class TrainTreeTraversal(TreeTraversal):
                 outer.desc_enc)
 
     def __init__(self, model, desc_enc, debug=False, record_logits=False, lambda_mixture=0.5, kd_logits=None):
-        """
-        Support record logits and load logits for knowledge distillation
-        """
         super().__init__(model, desc_enc)
         self.choice_point = None
         self.loss = pyrsistent.pvector()
