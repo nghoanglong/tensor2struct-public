@@ -671,9 +671,7 @@ class Vitext2SQLEncoderPhoBert(torch.nn.Module):
         self._device = device
         self.preproc = preproc
         self.bert_token_type = bert_token_type
-        self.base_enc_hidden_size = (
-            1024 if bert_version == "vinai/phobert-large" else 768
-        )
+        self.base_enc_hidden_size = 1024 if bert_version == "vinai/phobert-large" else 768
         self.include_in_memory = include_in_memory
 
         # ways to summarize header

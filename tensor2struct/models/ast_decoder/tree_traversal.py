@@ -201,7 +201,9 @@ class TreeTraversal:
     def process_children_inquire(self, last_choice):
         # 2. ApplyRule, like Call -> expr[func] expr*[args] keyword*[keywords]
         # Check if we have no children
-        type_info = self.model.ast_wrapper.singular_types[self.cur_item.node_type]
+        type_info = self.model.ast_wrapper.singular_types[
+            self.cur_item.node_type
+        ]
         if not type_info.fields:
             if self.pop():
                 last_choice = None

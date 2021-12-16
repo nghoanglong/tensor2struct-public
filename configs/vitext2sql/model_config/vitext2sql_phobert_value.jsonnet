@@ -2,6 +2,9 @@ local spider_base = import "vitext2sql_base.jsonnet";
 
 function(args) spider_base(args, data_path=args.data_path) {
     local data_path = args.data_path,
+    local base_bert_enc_size = if args.bert_version == "vinai/phobert-large" then 1024 else 768,
+    local enc_size =  base_bert_enc_size,
+    
     data: {
         local PREFIX = data_path,
         local ts = if $.args.use_other_train then
@@ -54,11 +57,7 @@ function(args) spider_base(args, data_path=args.data_path) {
         },
 
         decoder+: {
-            enc_recurrent_size: 
-                if ($.args.bert_version == "bert-large-uncased-whole-word-masking") 
-                    || ($.args.bert_version == "bert-large-cased-whole-word-masking")
-                    || ($.args.bert_version == "google/electra-large-discriminator")
-                then 1024 else 768,
+            enc_recurrent_size: enc_size,
             loss_type: $.args.loss_type,
         },
 
