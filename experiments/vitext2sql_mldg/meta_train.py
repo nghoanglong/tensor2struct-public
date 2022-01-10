@@ -112,7 +112,7 @@ class MetaTrainer(meta_train.MetaTrainer):
                 task = train_data_scheduler.get_batch(last_step)
                 inner_batch, outer_batches = task
                 ret_dic = maml_trainer.meta_train(
-                    self.model, inner_batch, outer_batches
+                    self.logger, self.model, inner_batch, outer_batches
                 )
                 loss = ret_dic["loss"]
 

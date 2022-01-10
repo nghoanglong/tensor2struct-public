@@ -30,7 +30,7 @@ class ModelAgnosticMetaLearning(nn.Module):
         assert not self.first_order
         return self.maml_train(model, inner_batch, outer_batches)
 
-    def maml_train(self, model, inner_batch, outer_batches):
+    def maml_train(self, logger, model, inner_batch, outer_batches):
         assert model.training
         ret_dic = {}
         with higher.innerloop_ctx(
@@ -72,7 +72,7 @@ class ModelAgnosticMetaLearning(nn.Module):
             del fmodel
             import gc
             del variables
-            
+
             gc.collect()
 
         ret_dic["loss"] = final_loss.item()
