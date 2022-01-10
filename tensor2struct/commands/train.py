@@ -37,6 +37,25 @@ class TrainConfig:
     num_batch_accumulated = attr.ib(default=1)
     clip_grad = attr.ib(default=None)
 
+class Logger:
+    def __init__(self, log_path=None, reopen_to_flush=False):
+        self.log_file = None
+        self.reopen_to_flush = reopen_to_flush
+        if log_path is not None:
+            os.makedirs(os.path.dirname(log_path), exist_ok=True)
+            self.log_file = open(log_path, 'a+')
+
+    def log(self, msg):
+        formatted = f'[{datetime.datetime.now().replace(microsecond=0).isoformat()}] {msg}'
+        print(formatted)
+        if self.log_file:
+            self.log_file.write(formatted + '\n')
+            if self.reopen_to_flush:
+                log_path = self.log_file.name
+                self.log_file.close()
+                self.log_file = open(log_path, 'a+')
+            else:
+                self.log_file.flush()
 
 class Trainer:
     def __init__(self, logger, config):
@@ -50,7 +69,6 @@ class Trainer:
         self.init_random = random_state.RandomContext(self.train_config.init_seed)
 
         self.load_model(config)
-        wandb.init()
     
     def load_train_config(self):
         self.train_config = registry.instantiate(TrainConfig, self.config["train"])
@@ -251,8 +269,9 @@ class Trainer:
                 ", ".join("{} = {}".format(k, v) for k, v in stats.items()),
             )
         )
+        
         kv_stats = ", ".join(f"{k} = {v}" for k, v in stats.items())
-        logger.log(logging.INFO,f"Step {last_step} stats, {eval_section}: {kv_stats}")
+        logger.log(f"Step {last_step} stats, {eval_section}: {kv_stats}")
 
 
 def add_parser():
@@ -277,17 +296,20 @@ def setup(args):
         args.logdir = os.path.join(args.logdir, config["model_name"])
 
     # Initialize the logger
-    logfile_path = os.path.join(args.logdir, "log.txt")
-    os.makedirs(os.path.dirname(logfile_path), exist_ok=True)
-    logger = logging.getLogger("tensor2struct")
-    logger.setLevel(logging.INFO)
-    fh = logging.FileHandler(logfile_path)
-    formatter = logging.Formatter(
-        "%(asctime)s - %(levelname)s - %(module)s - %(message)s"
-    )
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-    logger.info("Logging to {}".format(args.logdir))
+    reopen_to_flush = config.get('log', {}).get('reopen_to_flush')
+    logger = Logger(os.path.join(args.logdir, 'log.txt'), reopen_to_flush)
+
+    # logfile_path = os.path.join(args.logdir, "log.txt")
+    # os.makedirs(os.path.dirname(logfile_path), exist_ok=True)
+    # logger = logging.getLogger("tensor2struct")
+    # logger.setLevel(logging.INFO)
+    # fh = logging.FileHandler(logfile_path)
+    # formatter = logging.Formatter(
+    #     "%(asctime)s - %(levelname)s - %(module)s - %(message)s"
+    # )
+    # fh.setFormatter(formatter)
+    # logger.addHandler(fh)
+    # logger.info("Logging to {}".format(args.logdir))
 
     # Save the config info
     with open(
@@ -301,8 +323,6 @@ def setup(args):
     ) as f:
         json.dump(config, f, sort_keys=True, indent=4)
 
-    # save to wandb
-    # wandb.config.update(config)
     return config, logger
 
 

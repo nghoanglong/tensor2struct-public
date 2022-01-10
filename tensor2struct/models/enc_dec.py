@@ -153,6 +153,21 @@ class SemiBatchedEncDecModel(torch.nn.Module):
                 # if "bert" not in name:
                 non_bert_params.append(_param)
         return non_bert_params
+    
+    def get_phobert_parameters(self):
+        phobert_params = []
+        for name, _param in self.named_parameters():
+            if "phobert" in name:
+                phobert_params.append(_param)
+        return phobert_params
+    
+    def get_non_phobert_parameters(self):
+        non_phobert_params = []
+        phobert_params = set(self.get_phobert_parameters())
+        for name, _param in self.named_parameters():
+            if _param not in phobert_params:
+                non_phobert_params.append(_param)
+        return non_phobert_params
 
 
 @registry.register("model", "UnBatchedEncDec")

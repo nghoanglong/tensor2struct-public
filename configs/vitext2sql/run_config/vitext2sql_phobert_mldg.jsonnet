@@ -1,7 +1,7 @@
 {
     local exp_id = 0,
     project: "vitext2sql_value",
-    logdir: "log/vitext2sql/phobert_value_%d" %exp_id,
+    logdir: "logdir/tensor2struct-run",
     model_config: "../../configs/vitext2sql/model_config/vitext2sql_phobert_value.jsonnet",
     model_config_args: {
         # data 

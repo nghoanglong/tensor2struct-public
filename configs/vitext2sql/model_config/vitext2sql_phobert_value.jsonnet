@@ -80,4 +80,8 @@ function(args) spider_base(args, data_path=args.data_path) {
         end_lr: $.args.end_lr,
         num_warmup_steps: $.train.max_steps / 8,
     },
+
+    log: {
+        reopen_to_flush: true,
+    }
 }

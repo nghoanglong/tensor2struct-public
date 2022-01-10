@@ -40,7 +40,7 @@ class MetaTrainer(meta_train.MetaTrainer):
         with self.init_random:
             # 0. create inner_optimizer
             # inner_parameters = list(self.model.get_trainable_parameters())
-            inner_parameters = list(self.model.get_non_bert_parameters())
+            inner_parameters = list(self.model.get_non_phobert_parameters())
             inner_optimizer = registry.construct(
                 "optimizer", self.train_config.inner_opt, params=inner_parameters
             )
@@ -58,12 +58,9 @@ class MetaTrainer(meta_train.MetaTrainer):
             # 2. Outer optimizer
             # if config["optimizer"].get("name", None) in ["bertAdamw", "torchAdamw"]:
             if self.train_config.use_bert_training:
-                phobert_params = list(self.model.encoder.phobert_model.parameters())
+                phobert_params = list(self.model.get_phobert_parameters())
                 assert len(phobert_params) > 0
-                non_phobert_params = []
-                for name, _param in self.model.named_parameters():
-                    if "phobert" not in name:
-                        non_phobert_params.append(_param)
+                non_phobert_params = list(self.model.get_non_phobert_parameters())
                 assert len(non_phobert_params) + len(phobert_params) == len(list(self.model.parameters()))
                 self.logger.info(
                     f"{len(phobert_params)} PhoBERT parameters and {len(non_phobert_params)} non-PhoBERT parameters"
@@ -122,7 +119,7 @@ class MetaTrainer(meta_train.MetaTrainer):
 
             # clip bert grad
             if self.train_config.clip_grad and self.train_config.use_bert_training:
-                for param_group in optimizer.param_groups:
+                for param_group in optimizer.phobert_param_group:
                     torch.nn.utils.clip_grad_norm_(
                         param_group["params"], self.train_config.clip_grad,
                     )
@@ -134,18 +131,16 @@ class MetaTrainer(meta_train.MetaTrainer):
             # log lr for each step
             outer_lr = lr_scheduler.update_lr(last_step)
             if outer_lr is None:
-                outer_lr = [param["lr"] for param in optimizer.param_groups]
-            inner_lr = [param["lr"] for param in maml_trainer.inner_opt.param_groups]
+                outer_lr = [param["lr"] for param in optimizer.phobert_param_groups]
+            inner_lr = [param["lr"] for param in maml_trainer.inner_opt.phobert_param_groups]
 
         # Report metrics and lr
         if last_step % self.train_config.report_every_n == 0:
-            self.logger.info("Step {}: loss={:.4f}".format(last_step, loss))
             self.logger.info(f"Step {last_step}, lr={inner_lr, outer_lr}")
-            wandb.log({"train_loss": loss}, step=last_step)
             for idx, lr in enumerate(inner_lr):
-                wandb.log({f"inner_lr_{idx}": lr}, step=last_step)
+                self.logger.info(f"inner_lr_{idx} = {lr}, step={last_step}")
             for idx, lr in enumerate(outer_lr):
-                wandb.log({f"outer_lr_{idx}": lr}, step=last_step)
+                self.logger.info(f"outer_lr_{idx} = {lr}, step={last_step}")
 
 
 def main(args):
