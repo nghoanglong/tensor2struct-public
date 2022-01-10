@@ -10,7 +10,6 @@ import _jsonnet
 import attr
 import numpy as np
 import torch
-import wandb
 
 from tensor2struct.commands import train
 from tensor2struct.training import maml
@@ -33,7 +32,7 @@ class MetaTrainer(train.Trainer):
         )
 
         if self.train_config.num_batch_accumulated > 1:
-            self.logger.warn("Batch accumulation is used only at MAML-step level")
+            self.logger.log("Batch accumulation is used only at MAML-step level")
             raise NotImplementedError
 
     def load_optimizer(self, config):
@@ -54,7 +53,7 @@ class MetaTrainer(train.Trainer):
             maml_trainer.to(self.device)
 
             opt_params = maml_trainer.get_inner_opt_params()
-            self.logger.info(f"{len(opt_params)} opt meta parameters")
+            self.logger.log(f"{len(opt_params)} opt meta parameters")
 
             # 2. Outer optimizer
             optimizer = registry.construct(
@@ -99,7 +98,7 @@ class MetaTrainer(train.Trainer):
             loss = ret_dic["loss"]
 
             if self.train_config.clip_grad:
-                self.logger.warn("Clip grad is only designed for BERT finetune")
+                self.logger.log("Clip grad is only designed for BERT finetune")
 
             optimizer.step()
             optimizer.zero_grad()
@@ -112,13 +111,13 @@ class MetaTrainer(train.Trainer):
 
         # Report metrics and lr
         if last_step % self.train_config.report_every_n == 0:
-            self.logger.info("Step {}: loss={:.4f}".format(last_step, loss))
-            self.logger.info(f"Step {last_step}, lr={inner_lr, outer_lr}")
-            wandb.log({"train_loss": loss}, step=last_step)
+            self.logger.log("Step {}: loss={:.4f}".format(last_step, loss))
+            self.logger.log(f"Step {last_step}, lr={inner_lr, outer_lr}")
+            self.logger.log({"train_loss": loss}, step=last_step)
             for idx, lr in enumerate(inner_lr):
-                wandb.log({f"inner_lr_{idx}": lr}, step=last_step)
+                self.logger.log({f"inner_lr_{idx}": lr}, step=last_step)
             for idx, lr in enumerate(outer_lr):
-                wandb.log({f"outer_lr_{idx}": lr}, step=last_step)
+                self.logger.log({f"outer_lr_{idx}": lr}, step=last_step)
 
     def train(self, config, modeldir):
         inner_optimizer, maml_trainer, optimizer, lr_scheduler = self.load_optimizer(
@@ -154,7 +153,7 @@ class MetaTrainer(train.Trainer):
                 except RuntimeError as e:
                     # it seems to work for meta-train
                     err_msg = str(e)
-                    self.logger.warn(f"Step Failed {err_msg}")
+                    self.logger.log(f"Step Failed {err_msg}")
 
             saver.save(modeldir, last_step)
 

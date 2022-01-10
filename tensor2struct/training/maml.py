@@ -55,7 +55,7 @@ class ModelAgnosticMetaLearning(nn.Module):
                 # test(fmodel.fast_params)
 
                 diffopt.step(inner_loss)
-            logger.info(f"Inner loss: {inner_loss.item()}")
+            logger.log(f"Inner loss: {inner_loss.item()}")
 
             mean_outer_loss = torch.Tensor([0.0]).to(self.device)
             with torch.set_grad_enabled(model.training):
@@ -63,7 +63,7 @@ class ModelAgnosticMetaLearning(nn.Module):
                     outer_ret_dic = fmodel(outer_batch)
                     mean_outer_loss += outer_ret_dic["loss"]
             mean_outer_loss.div_(len(outer_batches))
-            logger.info(f"Outer loss: {mean_outer_loss.item()}")
+            logger.log(f"Outer loss: {mean_outer_loss.item()}")
 
             final_loss = inner_loss + mean_outer_loss
             final_loss.backward()
@@ -71,7 +71,8 @@ class ModelAgnosticMetaLearning(nn.Module):
             # not sure if it helps
             del fmodel
             import gc
-
+            del variables
+            
             gc.collect()
 
         ret_dic["loss"] = final_loss.item()

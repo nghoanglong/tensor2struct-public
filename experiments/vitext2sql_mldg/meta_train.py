@@ -10,7 +10,6 @@ import _jsonnet
 import attr
 import numpy as np
 import torch
-import wandb
 
 from tensor2struct.utils import registry, random_state, vocab
 from tensor2struct.utils import saver as saver_mod
@@ -30,11 +29,11 @@ class MetaTrainer(meta_train.MetaTrainer):
         )
 
         if self.train_config.num_batch_accumulated > 1:
-            self.logger.warn("Batch accumulation is used only at MAML-step level")
+            self.logger.log("Batch accumulation is used only at MAML-step level")
 
         if self.train_config.use_bert_training:
             if self.train_config.clip_grad is None:
-                self.logger.info("Gradient clipping is recommended for BERT training")
+                self.logger.log("Gradient clipping is recommended for BERT training")
 
     def load_optimizer(self, config):
         with self.init_random:
@@ -44,7 +43,7 @@ class MetaTrainer(meta_train.MetaTrainer):
             inner_optimizer = registry.construct(
                 "optimizer", self.train_config.inner_opt, params=inner_parameters
             )
-            self.logger.info(f"{len(inner_parameters)} parameters for inner update")
+            self.logger.log(f"{len(inner_parameters)} parameters for inner update")
 
             # 1. MAML trainer, might add new parameters to the optimizer, e.g., step size
             maml_trainer = maml.MAML(
@@ -53,7 +52,7 @@ class MetaTrainer(meta_train.MetaTrainer):
             maml_trainer.to(self.device)
 
             opt_params = maml_trainer.get_inner_opt_params()
-            self.logger.info(f"{len(opt_params)} opt meta parameters")
+            self.logger.log(f"{len(opt_params)} opt meta parameters")
 
             # 2. Outer optimizer
             # if config["optimizer"].get("name", None) in ["bertAdamw", "torchAdamw"]:
@@ -62,7 +61,7 @@ class MetaTrainer(meta_train.MetaTrainer):
                 assert len(phobert_params) > 0
                 non_phobert_params = list(self.model.get_non_phobert_parameters())
                 assert len(non_phobert_params) + len(phobert_params) == len(list(self.model.parameters()))
-                self.logger.info(
+                self.logger.log(
                     f"{len(phobert_params)} PhoBERT parameters and {len(non_phobert_params)} non-PhoBERT parameters"
                 )
 
@@ -136,11 +135,11 @@ class MetaTrainer(meta_train.MetaTrainer):
 
         # Report metrics and lr
         if last_step % self.train_config.report_every_n == 0:
-            self.logger.info(f"Step {last_step}, lr={inner_lr, outer_lr}")
+            self.logger.log(f"Step {last_step}, lr={inner_lr, outer_lr}")
             for idx, lr in enumerate(inner_lr):
-                self.logger.info(f"inner_lr_{idx} = {lr}, step={last_step}")
+                self.logger.log(f"inner_lr_{idx} = {lr}, step={last_step}")
             for idx, lr in enumerate(outer_lr):
-                self.logger.info(f"outer_lr_{idx} = {lr}, step={last_step}")
+                self.logger.log(f"outer_lr_{idx} = {lr}, step={last_step}")
 
 
 def main(args):

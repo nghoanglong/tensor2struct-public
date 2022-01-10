@@ -3,7 +3,6 @@ import collections
 import datetime
 import json
 import os
-import wandb
 import logging
 
 import _jsonnet
@@ -174,7 +173,7 @@ class Trainer:
                 norm_loss.backward()
 
             if self.train_config.clip_grad:
-                self.logger.warn("Clip grad is only designed for BERT finetune")
+                self.logger.log("Clip grad is only designed for BERT finetune")
 
             optimizer.step()
             new_lr = lr_scheduler.update_lr(last_step)
@@ -184,11 +183,11 @@ class Trainer:
                 new_lr = [param["lr"] for param in optimizer.param_groups]
 
             if last_step % self.train_config.report_every_n == 0:
-                self.logger.info("Step {}: loss={:.4f}".format(last_step, loss.item()))
-                self.logger.info(f"Step {last_step}, lr={new_lr}")
-                wandb.log({"train_loss": loss.item()}, step=last_step)
+                self.logger.log("Step {}: loss={:.4f}".format(last_step, loss.item()))
+                self.logger.log(f"Step {last_step}, lr={new_lr}")
+                self.logger.log({"train_loss": loss.item()}, step=last_step)
                 for i in range(len(new_lr)):
-                    wandb.log({f"lr_{i}": new_lr[i]}, step=last_step)
+                    self.logger.log({f"lr_{i}": new_lr[i]}, step=last_step)
 
     def save_state(self, saver, modeldir, last_step):
         if (
@@ -262,7 +261,7 @@ class Trainer:
         if "total" in stats:
             del stats["total"]
 
-        logger.info(
+        logger.log(
             "Step {} stats, {}: {}".format(
                 last_step,
                 eval_section,
@@ -302,14 +301,14 @@ def setup(args):
     # logfile_path = os.path.join(args.logdir, "log.txt")
     # os.makedirs(os.path.dirname(logfile_path), exist_ok=True)
     # logger = logging.getLogger("tensor2struct")
-    # logger.setLevel(logging.INFO)
+    # logger.setLevel(logging.log)
     # fh = logging.FileHandler(logfile_path)
     # formatter = logging.Formatter(
     #     "%(asctime)s - %(levelname)s - %(module)s - %(message)s"
     # )
     # fh.setFormatter(formatter)
     # logger.addHandler(fh)
-    # logger.info("Logging to {}".format(args.logdir))
+    # logger.log("Logging to {}".format(args.logdir))
 
     # Save the config info
     with open(
