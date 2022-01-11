@@ -128,8 +128,8 @@ class MetaTrainer(meta_train.MetaTrainer):
             # log lr for each step
             outer_lr = lr_scheduler.update_lr(last_step)
             if outer_lr is None:
-                outer_lr = [param["lr"] for param in optimizer.phobert_param_groups]
-            inner_lr = [param["lr"] for param in maml_trainer.inner_opt.phobert_param_groups]
+                outer_lr = [optimizer.phobert_param_group["lr"]]
+            inner_lr = [maml_trainer.inner_opt.phobert_param_group["lr"]]
             optimizer.zero_grad()
 
         # Report metrics and lr
