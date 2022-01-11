@@ -118,20 +118,19 @@ class MetaTrainer(meta_train.MetaTrainer):
 
             # clip bert grad
             if self.train_config.clip_grad and self.train_config.use_bert_training:
-                for param_group in optimizer.phobert_param_group:
-                    torch.nn.utils.clip_grad_norm_(
-                        param_group["params"], self.train_config.clip_grad,
-                    )
+                torch.nn.utils.clip_grad_norm_(
+                    optimizer.phobert_param_group["params"], 
+                    self.train_config.clip_grad,
+                )
 
 
             optimizer.step()
-            optimizer.zero_grad()
-
             # log lr for each step
             outer_lr = lr_scheduler.update_lr(last_step)
             if outer_lr is None:
                 outer_lr = [param["lr"] for param in optimizer.phobert_param_groups]
             inner_lr = [param["lr"] for param in maml_trainer.inner_opt.phobert_param_groups]
+            optimizer.zero_grad()
 
         # Report metrics and lr
         if last_step % self.train_config.report_every_n == 0:

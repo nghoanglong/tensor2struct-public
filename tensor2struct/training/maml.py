@@ -26,9 +26,9 @@ class ModelAgnosticMetaLearning(nn.Module):
         """
         return []
 
-    def meta_train(self, model, inner_batch, outer_batches):
+    def meta_train(self, logger, model, inner_batch, outer_batches):
         assert not self.first_order
-        return self.maml_train(model, inner_batch, outer_batches)
+        return self.maml_train(logger, model, inner_batch, outer_batches)
 
     def maml_train(self, logger, model, inner_batch, outer_batches):
         assert model.training
@@ -69,10 +69,8 @@ class ModelAgnosticMetaLearning(nn.Module):
             final_loss.backward()
 
             # not sure if it helps
-            del fmodel
             import gc
-            del variables
-
+            del fmodel
             gc.collect()
 
         ret_dic["loss"] = final_loss.item()
