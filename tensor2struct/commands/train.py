@@ -260,14 +260,6 @@ class Trainer:
                 stats[k] /= stats["total"]
         if "total" in stats:
             del stats["total"]
-
-        logger.log(
-            "Step {} stats, {}: {}".format(
-                last_step,
-                eval_section,
-                ", ".join("{} = {}".format(k, v) for k, v in stats.items()),
-            )
-        )
         
         kv_stats = ", ".join(f"{k} = {v}" for k, v in stats.items())
         logger.log(f"Step {last_step} stats, {eval_section}: {kv_stats}")

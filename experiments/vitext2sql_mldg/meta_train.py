@@ -134,11 +134,7 @@ class MetaTrainer(meta_train.MetaTrainer):
 
         # Report metrics and lr
         if last_step % self.train_config.report_every_n == 0:
-            self.logger.log(f"Step {last_step}, lr={inner_lr, outer_lr}")
-            for idx, lr in enumerate(inner_lr):
-                self.logger.log(f"inner_lr_{idx} = {lr}, step={last_step}")
-            for idx, lr in enumerate(outer_lr):
-                self.logger.log(f"outer_lr_{idx} = {lr}, step={last_step}")
+            self.logger.log(f"Step {last_step}, loss={loss}, inner_lr={inner_lr}, outer_lr={outer_lr}")
 
 
 def main(args):

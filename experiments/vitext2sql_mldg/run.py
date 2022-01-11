@@ -5,7 +5,6 @@ import _jsonnet
 import json
 import argparse
 import attr
-import wandb
 
 from experiments.vitext2sql_mldg import (
     meta_train,
@@ -55,14 +54,6 @@ def main():
         model_config_args = None
 
     logdir = args.logdir or exp_config["logdir"]
-
-    # # wandb init
-    # expname = exp_config["logdir"].split("/")[-1]
-    # project = exp_config["project"]
-
-    # # dist train need to start a wandb session in each process, not a global one
-    # if args.mode in ["train", "meta_train"]:
-    #     wandb.init(project=project, group=expname, job_type=args.mode)
 
     if args.mode == "preprocess":
         preprocess_config = PreprocessConfig(model_config_file, model_config_args)
