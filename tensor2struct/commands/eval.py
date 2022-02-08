@@ -28,9 +28,6 @@ def compute_metrics(config_path, config_args, section, inferred_path, etype, log
     else:
         config = json.loads(_jsonnet.evaluate_file(config_path))
 
-    # update config to wandb
-    wandb.config.update(config)
-
     if "model_name" in config and logdir:
         logdir = os.path.join(logdir, config["model_name"])
     if logdir:
@@ -73,8 +70,8 @@ def main(args):
             output_path = args.output.replace("__LOGDIR__", real_logdir)
         else:
             output_path = args.output
-        with open(output_path, "w") as f:
-            json.dump(metrics, f)
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(metrics, f, ensure_ascii=False)
         print("Wrote eval results to {}".format(output_path))
     else:
         print(metrics)
