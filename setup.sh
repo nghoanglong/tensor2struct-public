@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # install tensor2struct
+pip install torch==1.5.0+cu101 torchvision==0.6.0+cu101 torchtext~=0.3.1 -f https://download.pytorch.org/whl/torch_stable.html
 pip install -e .
 pip install entmax
-pip install torch==1.5.0+cu101 torchvision==0.6.0+cu101 torchtext~=0.3.1 -f https://download.pytorch.org/whl/torch_stable.html
 
 # spacy and nltk
 python -m spacy download en_core_web_sm
