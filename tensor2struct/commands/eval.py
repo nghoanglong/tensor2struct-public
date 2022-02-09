@@ -35,7 +35,7 @@ def compute_metrics(config_path, config_args, section, inferred_path, etype, log
 
     inferred = open(inferred_path)
     data = registry.construct("dataset", config["data"][section])
-    metrics = data.Metrics(data, etype)
+    metrics = data.Metrics(data)
 
     inferred_lines = list(inferred)
     if len(inferred_lines) < len(data):
@@ -46,14 +46,14 @@ def compute_metrics(config_path, config_args, section, inferred_path, etype, log
     for i, line in enumerate(inferred_lines):
         infer_results = json.loads(line)
         if infer_results["beams"]:
-            inferred_codes = [beam["inferred_code"] for beam in infer_results["beams"]]
+            inferred_codes = infer_results['beams'][0]['inferred_code']
         else:
             inferred_codes = [None]
         assert "index" in infer_results
 
         if etype in ["execution", "all"]:
             # if eval by execution, then we choose the first executable one from the beams
-            metrics.add_beams(data[infer_results["index"]], inferred_codes, data[i].orig["question"])
+            metrics.add(data[infer_results["index"]], inferred_codes)
         else:
             assert etype in ["match", "sacreBLEU", "tokenizedBLEU"]
             metrics.add_one(data[infer_results["index"]], inferred_codes[0])

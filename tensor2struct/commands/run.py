@@ -152,17 +152,6 @@ def eval_and_report(args, exp_config, model_config_args, logdir, infer_mod):
             print(f"Eval error {str(e)}")
             continue
 
-        # update some exp configs
-        wandb.config.update(
-            {
-                "eval_method": exp_config["eval_method"],
-                "eval_section": exp_config["eval_section"],
-                "eval_beam_size": exp_config["eval_beam_size"],
-            }
-        )
-        if "args" in exp_config:
-            wandb.config.update({"exp_args": exp_config["args"]})
-
         # commit with step
         eval_section = exp_config["eval_section"]
         if "all" in metrics["total_scores"]:  # spider
@@ -176,13 +165,6 @@ def eval_and_report(args, exp_config, model_config_args, logdir, infer_mod):
                 "\texe score:",
                 exec_match,
             )
-            wandb.log(
-                {
-                    f"{eval_section}_exact_match": exact_match,
-                    f"{eval_section}_exe_acc": exec_match,
-                },
-                step=step,
-            )
 
             if exact_match > summary[f"{eval_section}-best-exact_match"]:
                 summary[f"{eval_section}-best-exact_match"] = exact_match
@@ -193,12 +175,12 @@ def eval_and_report(args, exp_config, model_config_args, logdir, infer_mod):
         else:  # wikisql, etc
             lf_accuracy = metrics["total_scores"]["lf_accuracy"]
             exe_accuracy = metrics["total_scores"]["exe_accuracy"]
-            wandb.log(
-                {f"{eval_section}-lf-accuracy": lf_accuracy}, step=step,
-            )
-            wandb.log(
-                {f"{eval_section}-exe-accuracy": exe_accuracy}, step=step,
-            )
+            # wandb.log(
+            #     {f"{eval_section}-lf-accuracy": lf_accuracy}, step=step,
+            # )
+            # wandb.log(
+            #     {f"{eval_section}-exe-accuracy": exe_accuracy}, step=step,
+            # )
             print(step, metrics["total_scores"])
 
             if lf_accuracy > summary[f"{eval_section}-best-lf-accuracy"]:
@@ -207,11 +189,6 @@ def eval_and_report(args, exp_config, model_config_args, logdir, infer_mod):
             if exe_accuracy > summary[f"{eval_section}-best-exe-accuracy"]:
                 summary[f"{eval_section}-best-exe-accuracy"] = exe_accuracy
                 summary[f"{eval_section}-best_exe_accuracy_step"] = step
-
-    # sync summary to wandb
-    print("Summary:", str(summary))
-    for item in summary:
-        wandb.run.summary[item] = summary[item]
 
 
 def main():

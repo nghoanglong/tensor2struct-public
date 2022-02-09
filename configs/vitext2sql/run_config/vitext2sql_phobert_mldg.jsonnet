@@ -1,11 +1,11 @@
 {
     local exp_id = 0,
     project: "vitext2sql_value",
-    logdir: "logdir/tensor2struct-run",
+    logdir: "../../data/logdir/tensor2struct-run",
     model_config: "../../configs/vitext2sql/model_config/vitext2sql_phobert_value.jsonnet",
     model_config_args: {
         # data 
-        data_path: 'data/vitext2sql_syllable_level/',
+        data_path: '../../data/data/vitext2sql_syllable_level/',
         use_other_train: true,
 
         # model
@@ -45,7 +45,7 @@
     eval_section: "val",
     eval_type: "all", # match, exec, all
     eval_method: "spider_beam_search_with_heuristic",
-    eval_output: "ie_dir/spider_value",
+    eval_output: "../../data/logdir/tensor2struct-run/spider_value",
     eval_beam_size: 3,
     eval_debug: false,
     eval_name: "bert_run_%d_%s_%s_%d_%d" % [exp_id, self.eval_section, self.eval_method, self.eval_beam_size, self.model_config_args.att],

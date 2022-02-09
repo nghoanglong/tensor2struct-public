@@ -61,7 +61,7 @@ class Inferer:
         return model
 
     def infer(self, model, output_path, args):
-        output = open(output_path, "w")
+        output = open(output_path, 'w', encoding='utf-8')
 
         infer_func = registry.lookup("infer_method", args.method)
         with torch.no_grad():
@@ -114,7 +114,7 @@ class Inferer:
 
                 decoded.append(
                     {
-                        # "orig_question": orig_item["question"],
+                        "orig_question": orig_item.orig["question"],
                         "model_output": model_output,
                         "inferred_code": inferred_code,
                         "score": beam.score,
@@ -137,7 +137,7 @@ class Inferer:
                             "beams": decoded,
                             "orig_item": attr.asdict(orig_item),
                             "preproc_item": preproc_item[0],
-                        }
+                        }, ensure_ascii=False
                     )
                     + "\n"
                 )

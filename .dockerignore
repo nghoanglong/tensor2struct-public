@@ -1,0 +1,15 @@
+.vector_cache/
+.pytest_cache/
+.vscode/
+.idea/
+venv/
+build/
+
+*.egg
+*.egg-info
+
+logdir/
+ie_dirs/
+dumps/
+att_dirs/
+setup.sh
