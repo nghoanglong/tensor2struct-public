@@ -31,6 +31,8 @@ def compute_metrics(config_path, config_args, section, inferred_path, etype, log
     if logdir:
         inferred_path = inferred_path.replace("__LOGDIR__", logdir)
 
+    eval_file_path = os.path.join(logdir, 'eval_samples.txt')
+    eval_file = open(eval_file_path, encoding='utf-8')
     inferred = open(inferred_path)
     data = registry.construct("dataset", config["data"][section])
     metrics = data.Metrics(data)
@@ -48,13 +50,14 @@ def compute_metrics(config_path, config_args, section, inferred_path, etype, log
         else:
             inferred_codes = [None]
         assert "index" in infer_results
-
+        eval_file.write(f"sample - {i}:\n")
         if etype in ["execution", "all"]:
             # if eval by execution, then we choose the first executable one from the beams
-            metrics.add(data[infer_results["index"]], inferred_codes)
+            metrics.add(data[infer_results["index"]], inferred_codes, eval_file)
         else:
             assert etype in ["match", "sacreBLEU", "tokenizedBLEU"]
             metrics.add_one(data[infer_results["index"]], inferred_codes[0])
+    eval_file.close()
     return logdir, metrics.finalize()
 
 
