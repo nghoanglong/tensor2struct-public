@@ -2,8 +2,6 @@ import argparse
 import os
 import json
 import _jsonnet
-import wandb
-
 from tensor2struct.utils import registry
 
 
@@ -28,8 +26,8 @@ def compute_metrics(config_path, config_args, section, inferred_path, etype, log
     else:
         config = json.loads(_jsonnet.evaluate_file(config_path))
 
-    if "model_name" in config and logdir:
-        logdir = os.path.join(logdir, config["model_name"])
+    # if "model_name" in config and logdir:
+    #     logdir = os.path.join(logdir, config["model_name"])
     if logdir:
         inferred_path = inferred_path.replace("__LOGDIR__", logdir)
 

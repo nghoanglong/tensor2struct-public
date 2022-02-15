@@ -173,8 +173,8 @@ def setup(args):
     else:
         config = json.loads(_jsonnet.evaluate_file(args.config))
 
-    if "model_name" in config:
-        args.logdir = os.path.join(args.logdir, config["model_name"])
+    # if "model_name" in config:
+    #     args.logdir = os.path.join(args.logdir, config["model_name"])
 
     output_path = args.output.replace("__LOGDIR__", args.logdir)
     dir_name = os.path.dirname(output_path)

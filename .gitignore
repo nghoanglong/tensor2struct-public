@@ -24,3 +24,4 @@ slurm_outputs/
 third_party/mosesdecoder
 
 third_party/error_check
+processed_maml.jsonl

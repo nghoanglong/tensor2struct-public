@@ -5,7 +5,6 @@ import json
 import argparse
 import attr
 import collections
-import wandb
 
 import tensor2struct
 import experiments
@@ -207,10 +206,10 @@ def main():
         logdir = os.path.join(log_base_dir, exp_config["logdir"])
 
     # wandb init
-    if args.mode in ["train", "eval", "meta_train", "eval_only", "batched_eval"]:
-        expname = exp_config["logdir"].split("/")[-1]
-        project = exp_config["project"]
-        wandb.init(project=project, group=expname, job_type=args.mode)
+    # if args.mode in ["train", "eval", "meta_train", "eval_only", "batched_eval"]:
+    #     expname = exp_config["logdir"].split("/")[-1]
+    #     project = exp_config["project"]
+    #     wandb.init(project=project, group=expname, job_type=args.mode)
 
     # execute command
     if args.mode == "preprocess":
