@@ -506,9 +506,10 @@ class Evaluator:
         p_valid_col_units = build_valid_col_units(p_sql['from']['table_units'], schema)
         p_sql = rebuild_sql_val(p_sql)
         p_sql = rebuild_sql_col(p_valid_col_units, p_sql, kmap)
-        eval_file.write(f'question = {gold}\n')
-        eval_file.write(f'gold query = {g_sql}\n')
-        eval_file.write(f'predicted query = {p_sql}\n')
+        
+        eval_file.write('question = {}\n'.format(gold))
+        eval_file.write('gold query = {}\n'.format(g_sql))
+        eval_file.write('predicted query = {}\n'.format(p_sql))
         
         if self.etype in ["all", "exec"]:
             self.scores[hardness]['exec'] += eval_exec_match(self.db_paths[db_name], predicted, gold, p_sql, g_sql)
