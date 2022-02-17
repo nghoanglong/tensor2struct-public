@@ -565,35 +565,36 @@ class Vitext2sqlEncoderPhoBertPreproc(abstract_preproc.AbstractPreproc):
     def clear_items(self):
         self.texts = collections.defaultdict(list)
 
-    def preprocess_item(self, item, validation_info):
+    def preprocess_item(self, item, validation_info=None):
 
         # use the original words for copying, while they are not necessarily used for encoding
         # question_for_copying = self.tokenizer.tokenize_and_lemmatize(q_text)
         question_for_copying = self._tokenize(item.text, item.orig['question'])
         q_text = question_for_copying
-        if item.schema.db_id in self.context_cache:
-            context = self.context_cache[item.schema.db_id]
-        else:
-            context = registry.construct(
-                "context",
-                self.context_config,
-                schema=item.schema,
-                tokenizer=self._tokenize,
-            )
-            self.context_cache[item.schema.db_id] = context
+        context_preproc = self.preprocess_schema(item.schema)
+        # if item.schema.db_id in self.context_cache:
+        #     context = self.context_cache[item.schema.db_id]
+        # else:
+        #     context = registry.construct(
+        #         "context",
+        #         self.context_config,
+        #         schema=item.schema,
+        #         tokenizer=self._tokenize,
+        #     )
+        #     self.context_cache[item.schema.db_id] = context
 
-        preproc_schema = context.preproc_schema
-        schema_relations = context.compute_schema_relations()
+        preproc_schema = context_preproc.preproc_schema
+        schema_relations = context_preproc.compute_schema_relations()
         if self.compute_sc_link:
             sc_relations = (
-                context.compute_schema_linking(q_text, preproc_schema.normalized_column_names, preproc_schema.normalized_table_names)
+                context_preproc.compute_schema_linking(q_text, preproc_schema.normalized_column_names, preproc_schema.normalized_table_names)
             )
         else:
             sc_relations = {}
             
         if self.compute_cv_link:
             cv_relations = (
-                context.compute_cell_value_linking(q_text)
+                context_preproc.compute_cell_value_linking(q_text)
             )
         else:
             cv_relations = {}
@@ -614,6 +615,18 @@ class Vitext2sqlEncoderPhoBertPreproc(abstract_preproc.AbstractPreproc):
             "foreign_keys_tables": preproc_schema.foreign_keys_tables,
             "primary_keys": preproc_schema.primary_keys,
         }
+    def preprocess_schema(self, schema):
+        if schema.db_id in self.context_cache:
+            context = self.context_cache[schema.db_id]
+        else:
+            context = registry.construct(
+                "context",
+                self.context_config,
+                schema=schema,
+                tokenizer=self._tokenize,
+            )
+            self.context_cache[schema.db_id] = context
+        return context
 
     def save(self):
         os.makedirs(self.data_dir, exist_ok=True)

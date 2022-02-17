@@ -173,7 +173,7 @@ class SpiderDataset(torch.utils.data.Dataset):
                 schema.connection.close()
     
     class Metrics:
-        def __init__(self, dataset):
+        def __init__(self, dataset, etype):
             self.dataset = dataset
             self.foreign_key_maps = {
                 db_id: evaluation.build_foreign_key_map(schema.orig)
@@ -182,7 +182,7 @@ class SpiderDataset(torch.utils.data.Dataset):
             self.evaluator = evaluation.Evaluator(
                 self.dataset.db_path,
                 self.foreign_key_maps,
-                'match',
+                etype,
                 self.dataset.table_path)
             self.results = []
 

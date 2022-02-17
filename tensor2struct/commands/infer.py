@@ -144,7 +144,38 @@ class Inferer:
             else:
                 output.write(json.dumps({"index": i, "beams": decoded}) + "\n")
             output.flush()
+            
+    def _infer_one(self, model, data_item, preproc_item, beam_size, debug=False):
+        infer_func = registry.lookup("infer_method", "spider_beam_search_with_heuristic")
+        beams = infer_func(
+            model, data_item, preproc_item, beam_size=beam_size, max_steps=1000, from_cond=False)
+        decoded = []
+        for beam in beams:
+            model_output, inferred_code = beam.inference_state.finalize()
 
+            decoded = []
+            for beam in beams:
+                model_output, inferred_code = beam.inference_state.finalize()
+                if inferred_code is None:
+                    continue
+
+                decoded.append(
+                    {
+                        "orig_question": data_item.orig["question"],
+                        "model_output": model_output,
+                        "inferred_code": inferred_code,
+                        "score": beam.score,
+                        **(
+                            {
+                                "choice_history": beam.choice_history,
+                                "score_history": beam.score_history,
+                            }
+                            if debug
+                            else {}
+                        ),
+                    }
+                )
+        return decoded
 
 def add_parser():
     parser = argparse.ArgumentParser()

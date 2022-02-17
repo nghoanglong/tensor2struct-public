@@ -35,7 +35,7 @@ def compute_metrics(config_path, config_args, section, inferred_path, etype, log
     eval_file = open(eval_file_path, 'w', encoding='utf-8')
     inferred = open(inferred_path)
     data = registry.construct("dataset", config["data"][section])
-    metrics = data.Metrics(data)
+    metrics = data.Metrics(data, etype)
 
     inferred_lines = list(inferred)
     if len(inferred_lines) < len(data):

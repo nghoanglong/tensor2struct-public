@@ -5,12 +5,22 @@ import json
 import argparse
 import attr
 import collections
+import torch
 
 import tensor2struct
 import experiments
 
 from tensor2struct.commands import preprocess, train, infer, batched_infer, eval, meta_train
+from tensor2struct.utils import registry
 
+
+@attr.s
+class SpiderItem:
+    text = attr.ib()
+    code = attr.ib()
+    schema = attr.ib()
+    orig = attr.ib()
+    orig_schema = attr.ib()
 
 @attr.s
 class PreprocessConfig:
@@ -70,10 +80,12 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "mode",
-        choices=["preprocess", "train", "eval", "meta_train", "eval_only", "batched_eval"],
+        choices=["preprocess", "train", "eval", "meta_train", "eval_only", "batched_eval", "predict"],
         help="preprocess/train/eval/meta_train/eval_only/batched_eval",
     )
     parser.add_argument("exp_config_file", help="jsonnet file for experiments")
+    parser.add_argument("--input_nl", default=None, type=str, help="for predict sql query")
+    parser.add_argument("--db_id", default=None, type=str, help="for predict sql query")
     parser.add_argument("--config_args", help="exp configs")
     args = parser.parse_args()
     return args
@@ -159,10 +171,12 @@ def eval_and_report(args, exp_config, model_config_args, logdir, infer_mod):
             print(
                 "Step: ",
                 step,
-                "\tmatch score,",
+                "\texact score:",
                 exact_match,
-                "\texe score:",
+                "\texec score:",
                 exec_match,
+                "\ttotal score:",
+                metrics["total_scores"]
             )
 
             if exact_match > summary[f"{eval_section}-best-exact_match"]:
@@ -189,6 +203,46 @@ def eval_and_report(args, exp_config, model_config_args, logdir, infer_mod):
                 summary[f"{eval_section}-best-exe-accuracy"] = exe_accuracy
                 summary[f"{eval_section}-best_exe_accuracy_step"] = step
 
+def predict(exp_config, model_config_args, logdir, input_nl, db_id):
+    model_config_file = exp_config["model_config"]
+    infer_output_path = "{}/{}-step{}.infer".format(
+            exp_config["eval_output"], exp_config["eval_name"], exp_config["eval_steps"]
+    )
+    infer_config = InferConfig(
+        model_config_file,
+        model_config_args,
+        logdir,
+        exp_config["eval_section"],
+        exp_config["eval_beam_size"],
+        infer_output_path,
+        exp_config["eval_steps"],
+        debug=exp_config["eval_debug"],
+        method=exp_config["eval_method"],
+    )
+    setup_infer, output_path = infer.setup(infer_config)
+    inferer = infer.Inferer(setup_infer)
+    pretrained_model = inferer.load_model(logdir, exp_config["eval_steps"])
+    dataset = registry.construct('dataset', inferer.config['data']['val'])
+
+    for _, schema in dataset.schemas.items():
+        pretrained_model.preproc.enc_preproc.preprocess_schema(schema)
+
+    def question(q, db_id):
+        spider_schema = dataset.schemas[db_id]
+        data_item = SpiderItem(
+            text=None,
+            code=None,
+            schema=spider_schema,
+            orig_schema=spider_schema.orig,
+            orig={"question": q}
+        )
+        pretrained_model.preproc.clear_items()
+        enc_input = pretrained_model.preproc.enc_preproc.preprocess_item(data_item)
+        preproc_data = enc_input, None
+        with torch.no_grad():
+            return inferer._infer_one(pretrained_model, data_item, preproc_data, beam_size=1)
+    
+    return question(input_nl, db_id)
 
 def main():
     args = parse_args()
@@ -225,6 +279,8 @@ def main():
         eval_and_report(args, exp_config, model_config_args, logdir, infer_mod=infer)
     elif args.mode == "batched_eval":
         eval_and_report(args, exp_config, model_config_args, logdir, infer_mod=batched_infer)
+    elif args.mode == "predict":
+        predict(exp_config, model_config_args, logdir, args.input_nl, args.db_id,)
     else:
         raise NotImplementedError
 
