@@ -252,7 +252,7 @@ def main():
     # cluster base dir
     log_base_dir = os.environ.get("LOG_BASE_DIR", None)
     if log_base_dir is None:
-        print(f"Using default log base dir {os.getcwd()}")
+        # print(f"Using default log base dir {os.getcwd()}")
         logdir = exp_config["logdir"]
     else:
         logdir = os.path.join(log_base_dir, exp_config["logdir"])

@@ -211,8 +211,8 @@ def setup(args):
     dir_name = os.path.dirname(output_path)
     if not os.path.exists(dir_name):
         os.mkdir(dir_name)
-    if os.path.exists(output_path):
-        print("WARNING Output file {} already exists".format(output_path))
+    # if os.path.exists(output_path):
+        # print("WARNING Output file {} already exists".format(output_path))
         # sys.exit(1)
     return config, output_path
 

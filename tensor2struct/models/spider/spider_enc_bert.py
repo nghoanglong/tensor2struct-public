@@ -21,7 +21,7 @@ from tensor2struct.models.spider.spider_match_utils import (
 from transformers import BertModel, ElectraModel
 from transformers import AutoModel, AutoTokenizer
 
-
+logging.set_verbosity_error()
 import logging
 
 logger = logging.getLogger("tensor2struct")

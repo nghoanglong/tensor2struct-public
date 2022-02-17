@@ -46,7 +46,7 @@ def load_checkpoint(item_dict, model_dir, map_location=None, step=None):
     if step is not None:
         path += "-{:08d}".format(step)
     if os.path.exists(path):
-        print("Loading model from %s" % path)
+        # print("Loading model from %s" % path)
         checkpoint = torch.load(path, map_location=map_location)
 
         # remove prefix for DDP checkpoints
