@@ -204,7 +204,7 @@ def eval_and_report(args, exp_config, model_config_args, logdir, infer_mod):
 def predict(exp_config, model_config_args, logdir, input_nl, db_id):
     model_config_file = exp_config["model_config"]
     infer_output_path = "{}/{}-step{}.infer".format(
-            exp_config["eval_output"], exp_config["eval_name"], exp_config["eval_steps"]
+            exp_config["eval_output"], exp_config["eval_name"], exp_config["eval_steps"][0]
     )
     infer_config = InferConfig(
         model_config_file,
@@ -213,13 +213,13 @@ def predict(exp_config, model_config_args, logdir, input_nl, db_id):
         exp_config["eval_section"],
         exp_config["eval_beam_size"],
         infer_output_path,
-        exp_config["eval_steps"],
+        exp_config["eval_steps"][0],
         debug=exp_config["eval_debug"],
         method=exp_config["eval_method"],
     )
     setup_infer, output_path = infer.setup(infer_config)
     inferer = infer.Inferer(setup_infer)
-    pretrained_model = inferer.load_model(logdir, exp_config["eval_steps"])
+    pretrained_model = inferer.load_model(logdir, exp_config["eval_steps"][0])
     dataset = registry.construct('dataset', inferer.config['data']['val'])
 
     for _, schema in dataset.schemas.items():
@@ -275,7 +275,7 @@ def main():
         db_id = input('enter db_id: ')
         input_nl = input('enter nntn: ')
         decoded = predict(exp_config, model_config_args, logdir, input_nl, db_id)
-        print(f'result predicted query = {decoded[0]['inferred_code']}')
+        print(f'result predicted query = {decoded[0]["inferred_code"]}')
     else:
         raise NotImplementedError
 
