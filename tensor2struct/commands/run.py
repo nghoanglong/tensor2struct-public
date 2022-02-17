@@ -84,8 +84,6 @@ def parse_args():
         help="preprocess/train/eval/meta_train/eval_only/batched_eval",
     )
     parser.add_argument("exp_config_file", help="jsonnet file for experiments")
-    parser.add_argument("--input_nl", default=None, type=str, help="for predict sql query")
-    parser.add_argument("--db_id", default=None, type=str, help="for predict sql query")
     parser.add_argument("--config_args", help="exp configs")
     args = parser.parse_args()
     return args
@@ -259,12 +257,6 @@ def main():
     else:
         logdir = os.path.join(log_base_dir, exp_config["logdir"])
 
-    # wandb init
-    # if args.mode in ["train", "eval", "meta_train", "eval_only", "batched_eval"]:
-    #     expname = exp_config["logdir"].split("/")[-1]
-    #     project = exp_config["project"]
-    #     wandb.init(project=project, group=expname, job_type=args.mode)
-
     # execute command
     if args.mode == "preprocess":
         preprocess_config = PreprocessConfig(model_config_file, model_config_args)
@@ -280,7 +272,10 @@ def main():
     elif args.mode == "batched_eval":
         eval_and_report(args, exp_config, model_config_args, logdir, infer_mod=batched_infer)
     elif args.mode == "predict":
-        predict(exp_config, model_config_args, logdir, args.input_nl, args.db_id,)
+        db_id = input('enter db_id: ')
+        input_nl = input('enter nntn: ')
+        decoded = predict(exp_config, model_config_args, logdir, input_nl, db_id)
+        print(f'result predicted query = {decoded[0]['inferred_code']}')
     else:
         raise NotImplementedError
 

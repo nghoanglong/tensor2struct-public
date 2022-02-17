@@ -52,6 +52,6 @@
 
     local _start_step = $.model_config_args.save_threshold / 1000,
     local _end_step = $.model_config_args.max_steps / 1000,
-    eval_steps: [ 1000 * x for x in std.range(_start_step, _end_step)],
+    eval_steps: [20000],
     # eval_steps: [ $.model_config_args.max_steps ],
 }
