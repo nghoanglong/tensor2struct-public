@@ -20,6 +20,7 @@ from tensor2struct.models.spider.spider_match_utils import (
 
 from transformers import BertModel, ElectraModel
 from transformers import AutoModel, AutoTokenizer
+from transformers import logging
 
 logging.set_verbosity_error()
 import logging

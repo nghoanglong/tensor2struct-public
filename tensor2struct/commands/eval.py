@@ -46,14 +46,14 @@ def compute_metrics(config_path, config_args, section, inferred_path, etype, log
     for i, line in enumerate(inferred_lines):
         infer_results = json.loads(line)
         if infer_results["beams"]:
-            inferred_codes = infer_results['beams'][0]['inferred_code']
+            inferred_codes = [beam["inferred_code"] for beam in infer_results["beams"]]
         else:
             inferred_codes = [None]
         assert "index" in infer_results
         eval_file.write("sample - {}:\n".format(i))
         if etype in ["execution", "all"]:
             # if eval by execution, then we choose the first executable one from the beams
-            metrics.add(data[infer_results["index"]], inferred_codes, eval_file)
+            metrics.add_beams(data[infer_results["index"]], inferred_codes, eval_file, data[i].orig["question"])
         else:
             assert etype in ["match", "sacreBLEU", "tokenizedBLEU"]
             metrics.add_one(data[infer_results["index"]], inferred_codes[0])
