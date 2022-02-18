@@ -193,13 +193,13 @@ class SpiderDataset(torch.utils.data.Dataset):
                 ret_dict["orig_question"] = orig_question
             self.results.append(ret_dict)
 
-        def add_beams(self, item, inferred_codes, eval_file, orig_question=None):
+        def add_beams(self, item, inferred_codes, orig_question=None):
             beam_dict = {}
             if orig_question:
                 beam_dict["orig_question"] = orig_question
             for i, code in enumerate(inferred_codes):
                 ret_dict = self.evaluator.evaluate_one(
-                    item.schema.db_id, item.orig['query'], code, eval_file)
+                    item.schema.db_id, item.orig['query'], code)
                 beam_dict[i] = ret_dict
                 if ret_dict["exact"] is True:
                     break
