@@ -151,7 +151,7 @@ class SpiderDataset(torch.utils.data.Dataset):
             self.demos: Dict[str, List] = json.load(open(demo_path))
             
         # Backup in-memory copies of all the DBs and create the live connections
-        for db_id, schema in tqdm(self.schemas.items(), desc="DB connections"):
+        for db_id, schema in self.schemas.items():
             sqlite_path = Path(db_path) / db_id / f"{db_id}.sqlite"
             source: sqlite3.Connection
             with sqlite3.connect(str(sqlite_path)) as source:

@@ -272,8 +272,8 @@ def main():
     elif args.mode == "batched_eval":
         eval_and_report(args, exp_config, model_config_args, logdir, infer_mod=batched_infer)
     elif args.mode == "predict":
-        db_id = input('enter db_id: ')
-        input_nl = input('enter nntn: ')
+        db_id = input('enter database name: ')
+        input_nl = input('enter vietnamese question: ')
         decoded = predict(exp_config, model_config_args, logdir, input_nl, db_id)
         print(f'result predicted query = {decoded[0]["inferred_code"]}')
     else:
