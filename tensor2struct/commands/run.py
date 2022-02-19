@@ -275,7 +275,7 @@ def main():
         db_id = input('enter database name: ')
         input_nl = input('enter vietnamese question: ')
         decoded = predict(exp_config, model_config_args, logdir, input_nl, db_id)
-        print(f'result predicted query = {decoded[0]["inferred_code"]}')
+        print(f'predicted query = {decoded[0]["inferred_code"]}')
     else:
         raise NotImplementedError
 
