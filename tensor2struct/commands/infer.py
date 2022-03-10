@@ -55,9 +55,9 @@ class Inferer:
         last_step = saver.restore(
             logdir, step=step, map_location=self.device, item_keys=["model"]
         )
-        if last_step == 0:  # which is fine fro pretrained model
-            # print("Warning: infer on untrained model")
-            raise CheckpointNotFoundError(f"Attempting to infer on untrained model, logdir {logdir}, step {step}")
+        # if last_step == 0:  # which is fine fro pretrained model
+        #     # print("Warning: infer on untrained model")
+        #     raise CheckpointNotFoundError(f"Attempting to infer on untrained model, logdir {logdir}, step {step}")
         return model
 
     def infer(self, model, output_path, args):

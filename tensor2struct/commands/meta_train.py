@@ -176,7 +176,6 @@ class MetaTrainer(train.Trainer):
                         lr_scheduler,
                         last_step,
                     )
-                    last_step += 1
                     self.save_state(saver, modeldir, last_step)
                     if last_step % 1000 == 0:
                         model_config_file = args.config
@@ -227,7 +226,7 @@ class MetaTrainer(train.Trainer):
 
                         print(f"step {last_step} (exact score) = {exact_match}")
                         print(f"step {last_step} (exex score) = {exec_match}")
-
+                    last_step += 1
                 except RuntimeError as e:
                     # it seems to work for meta-train
                     err_msg = str(e)
