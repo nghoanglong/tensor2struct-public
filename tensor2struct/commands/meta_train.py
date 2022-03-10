@@ -11,10 +11,13 @@ import attr
 import numpy as np
 import torch
 
-from tensor2struct.commands import train
+from tensor2struct.commands.train import train
+from tensor2struct.commands import infer, eval
 from tensor2struct.training import maml
 from tensor2struct.utils import registry, random_state, vocab
 from tensor2struct.utils import saver as saver_mod
+
+
 
 
 @attr.s
@@ -23,6 +26,31 @@ class MetaTrainConfig(train.TrainConfig):
     inner_opt = attr.ib(kw_only=True)
     first_order = attr.ib(kw_only=True, default=False)
     data_scheduler = attr.ib(kw_only=True)
+
+@attr.s
+class InferConfig:
+    config = attr.ib()
+    config_args = attr.ib()
+    logdir = attr.ib()
+    section = attr.ib()
+    beam_size = attr.ib()
+    output = attr.ib()
+    step = attr.ib()
+    debug = attr.ib(default=False)
+    method = attr.ib(default="beam_search")
+    mode = attr.ib(default="infer")
+    limit = attr.ib(default=None)
+    output_history = attr.ib(default=False)
+
+@attr.s
+class EvalConfig:
+    config = attr.ib()
+    config_args = attr.ib()
+    logdir = attr.ib()
+    section = attr.ib()
+    inferred = attr.ib()
+    output = attr.ib()
+    etype = attr.ib(default="match")
 
 
 class MetaTrainer(train.Trainer):
@@ -150,6 +178,56 @@ class MetaTrainer(train.Trainer):
                     )
                     last_step += 1
                     self.save_state(saver, modeldir, last_step)
+                    if last_step % 1000 == 0:
+                        model_config_file = args.config
+                        exp_config = args.exp_config
+                        model_config_args = args.config_args
+                        logdir = args.logdir
+
+                        infer_output_path = "{}/{}-step{}.infer".format(
+                            exp_config["eval_output"], exp_config["eval_name"], last_step
+                        )
+
+                        
+                        infer_config = InferConfig(
+                            model_config_file,
+                            model_config_args,
+                            logdir,
+                            exp_config["eval_section"],
+                            exp_config["eval_beam_size"],
+                            infer_output_path,
+                            last_step,
+                            debug=exp_config["eval_debug"],
+                            method=exp_config["eval_method"],
+                        )
+                        infer.main(infer_config)
+
+                        eval_output_path = "{}/{}-step{}.eval".format(
+                            exp_config["eval_output"], exp_config["eval_name"], last_step
+                        )
+                        eval_config = EvalConfig(
+                            model_config_file,
+                            model_config_args,
+                            logdir,
+                            exp_config["eval_section"],
+                            infer_output_path,
+                            eval_output_path,
+                        )
+
+                        # etype
+                        if "eval_type" in exp_config:
+                            eval_config.etype = exp_config["eval_type"]
+                        else:
+                            assert eval_config.etype == "match"
+
+                        metrics = eval.main(eval_config)
+
+                        exact_match = metrics["total_scores"]["all"]["exact"]
+                        exec_match = metrics["total_scores"]["all"]["exec"]
+
+                        print(f"step {last_step} (exact score) = {exact_match}")
+                        print(f"step {last_step} (exex score) = {exec_match}")
+
                 except RuntimeError as e:
                     # it seems to work for meta-train
                     err_msg = str(e)

@@ -38,6 +38,7 @@ class TrainConfig:
 
 @attr.s
 class MetaTrainConfig:
+    exp_config = attr.ib()
     config = attr.ib()
     config_args = attr.ib()
     logdir = attr.ib()

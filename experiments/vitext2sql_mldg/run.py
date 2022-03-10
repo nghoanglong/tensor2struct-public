@@ -25,6 +25,7 @@ class TrainConfig:
 
 @attr.s
 class MetaTrainConfig:
+    exp_config = attr.ib()
     config = attr.ib()
     config_args = attr.ib()
     logdir = attr.ib()
@@ -59,7 +60,7 @@ def main():
         preprocess_config = PreprocessConfig(model_config_file, model_config_args)
         preprocess.main(preprocess_config)
     elif args.mode == "meta_train":
-        train_config = MetaTrainConfig(model_config_file, model_config_args, logdir)
+        train_config = MetaTrainConfig(exp_config, model_config_file, model_config_args, logdir)
         meta_train.main(train_config)
 
 

@@ -143,7 +143,7 @@ def main(args):
 
     # Construct trainer and do training
     trainer = MetaTrainer(logger, config)
-    trainer.train(config, modeldir=args.logdir)
+    trainer.train(config, args, modeldir=args.logdir)
 
 
 if __name__ == "__main__":
