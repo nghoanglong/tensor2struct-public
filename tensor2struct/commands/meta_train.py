@@ -11,7 +11,7 @@ import attr
 import numpy as np
 import torch
 
-from tensor2struct.commands.train import train
+from tensor2struct.commands import train
 from tensor2struct.commands import infer, eval
 from tensor2struct.training import maml
 from tensor2struct.utils import registry, random_state, vocab
