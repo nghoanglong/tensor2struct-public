@@ -11,6 +11,8 @@ import torch
 
 from tensor2struct.utils import random_state, registry
 from tensor2struct.utils import saver as saver_mod
+from tensor2struct.commands.run import eval_and_report
+from tensor2struct.commands import infer
 
 
 @attr.s
@@ -35,6 +37,31 @@ class TrainConfig:
 
     num_batch_accumulated = attr.ib(default=1)
     clip_grad = attr.ib(default=None)
+
+@attr.s
+class InferConfig:
+    config = attr.ib()
+    config_args = attr.ib()
+    logdir = attr.ib()
+    section = attr.ib()
+    beam_size = attr.ib()
+    output = attr.ib()
+    step = attr.ib()
+    debug = attr.ib(default=False)
+    method = attr.ib(default="beam_search")
+    mode = attr.ib(default="infer")
+    limit = attr.ib(default=None)
+    output_history = attr.ib(default=False)
+
+@attr.s
+class EvalConfig:
+    config = attr.ib()
+    config_args = attr.ib()
+    logdir = attr.ib()
+    section = attr.ib()
+    inferred = attr.ib()
+    output = attr.ib()
+    etype = attr.ib(default="match")
 
 class Logger:
     def __init__(self, log_path=None, reopen_to_flush=False):
@@ -194,6 +221,7 @@ class Trainer:
             last_step % self.train_config.save_every_n == 0
             and last_step >= self.train_config.save_threshold
         ):
+
             saver.save(modeldir, last_step)
 
     def train(self, config, modeldir):
@@ -218,7 +246,7 @@ class Trainer:
             for batch in loader:
                 yield batch
 
-    def eval_model(self, last_step, train_eval_data_loader, val_data_loader):
+    def eval_model(self, args, last_step, train_eval_data_loader, val_data_loader):
         if last_step % self.train_config.eval_every_n == 0:
             if self.train_config.eval_on_train:
                 self._eval_model(
@@ -238,6 +266,67 @@ class Trainer:
                     "val",
                     num_eval_items=self.train_config.num_eval_items,
                 )
+            if last_step % 1000 == 0:
+                model_config_file = args.config
+                exp_config = args.exp_config
+                model_config_args = args.config_args
+                logdir = args.logdir
+
+                for step in exp_config["eval_steps"]:
+                    infer_output_path = "{}/{}-step{}.infer".format(
+                        exp_config["eval_output"], exp_config["eval_name"], step
+                    )
+
+                   
+                    infer_config = InferConfig(
+                        model_config_file,
+                        model_config_args,
+                        logdir,
+                        exp_config["eval_section"],
+                        exp_config["eval_beam_size"],
+                        infer_output_path,
+                        step,
+                        debug=exp_config["eval_debug"],
+                        method=exp_config["eval_method"],
+                    )
+
+                    try:
+                        infer.main(infer_config)
+                    except infer.CheckpointNotFoundError as e:
+                        print(f"Infer error {str(e)}")
+                        continue
+
+                    eval_output_path = "{}/{}-step{}.eval".format(
+                        exp_config["eval_output"], exp_config["eval_name"], step
+                    )
+                    eval_config = EvalConfig(
+                        model_config_file,
+                        model_config_args,
+                        logdir,
+                        exp_config["eval_section"],
+                        infer_output_path,
+                        eval_output_path,
+                    )
+
+                    # etype
+                    if "eval_type" in exp_config:
+                        eval_config.etype = exp_config["eval_type"]
+                    else:
+                        assert eval_config.etype == "match"
+
+                    try:
+                        metrics = eval.main(eval_config)
+                    except infer.CheckpointNotFoundError as e:
+                        print(f"Eval error {str(e)}")
+                        continue
+
+                    exact_match = metrics["total_scores"]["all"]["exact"]
+                    exec_match = metrics["total_scores"]["all"]["exec"]
+
+                    print(f"step {last_step} (exact score) = {exact_match}")
+                    print(f"step {last_step} (exex score) = {exec_match}")
+
+
 
     @staticmethod
     def _eval_model(
@@ -283,8 +372,8 @@ def setup(args):
         config = json.loads(_jsonnet.evaluate_file(args.config))
 
     # logdir
-    if "model_name" in config:
-        args.logdir = os.path.join(args.logdir, config["model_name"])
+    # if "model_name" in config:
+    #     args.logdir = os.path.join(args.logdir, config["model_name"])
 
     # Initialize the logger
     reopen_to_flush = config.get('log', {}).get('reopen_to_flush')

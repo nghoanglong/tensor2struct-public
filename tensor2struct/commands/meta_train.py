@@ -119,7 +119,7 @@ class MetaTrainer(train.Trainer):
             for idx, lr in enumerate(outer_lr):
                 self.logger.log({f"outer_lr_{idx}": lr}, step=last_step)
 
-    def train(self, config, modeldir):
+    def train(self, config, args, modeldir):
         inner_optimizer, maml_trainer, optimizer, lr_scheduler = self.load_optimizer(
             config
         )
@@ -137,7 +137,7 @@ class MetaTrainer(train.Trainer):
         # 5. Start training loop
         with self.data_random:
             while last_step < self.train_config.max_steps:
-                self.eval_model(last_step, train_eval_data_loader, val_data_loader)
+                self.eval_model(args, last_step, train_eval_data_loader, val_data_loader)
 
                 try:
                     self.step(
@@ -164,7 +164,7 @@ def main(args):
 
     # Construct trainer and do training
     trainer = MetaTrainer(logger, config)
-    trainer.train(config, modeldir=args.logdir)
+    trainer.train(config, args, modeldir=args.logdir)
 
 
 if __name__ == "__main__":

@@ -207,6 +207,7 @@ class SpiderDataset(torch.utils.data.Dataset):
 
         def finalize(self):
             self.evaluator.finalize()
+            evaluation.print_scores(self.evaluator.scores, 'all')
             return {
                 'per_item': self.results,
                 'total_scores': self.evaluator.scores

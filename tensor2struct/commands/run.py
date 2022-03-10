@@ -30,6 +30,7 @@ class PreprocessConfig:
 
 @attr.s
 class TrainConfig:
+    exp_config = attr.ib()
     config = attr.ib()
     config_args = attr.ib()
     logdir = attr.ib()
@@ -265,7 +266,7 @@ def main():
         train_config = TrainConfig(model_config_file, model_config_args, logdir)
         train.main(train_config)
     elif args.mode == "meta_train":
-        train_config = MetaTrainConfig(model_config_file, model_config_args, logdir)
+        train_config = MetaTrainConfig(exp_config, model_config_file, model_config_args, logdir)
         meta_train.main(train_config)
     elif args.mode in ["eval", "eval_only"]:
         eval_and_report(args, exp_config, model_config_args, logdir, infer_mod=infer)
