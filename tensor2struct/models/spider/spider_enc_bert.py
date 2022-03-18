@@ -545,7 +545,7 @@ class Vitext2sqlEncoderPhoBertPreproc(abstract_preproc.AbstractPreproc):
             + sum(len(c.name) for c in item.schema.columns)
             + sum(len(t.name) for t in item.schema.tables)
         )
-        if num_words > 256:
+        if num_words > 256 and section != "test":
             logger.info(f"Found long seq in {item.schema.db_id}")
             return False, None
         else:

@@ -177,7 +177,7 @@ class MetaTrainer(train.Trainer):
                         last_step,
                     )
                     self.save_state(saver, modeldir, last_step)
-                    if last_step % 1000 == 0:
+                    if last_step % 200 == 0:
                         model_config_file = args.config
                         exp_config = args.exp_config
                         model_config_args = args.config_args

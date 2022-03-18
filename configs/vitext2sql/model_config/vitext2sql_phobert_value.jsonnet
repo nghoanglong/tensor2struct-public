@@ -28,6 +28,12 @@ function(args) spider_base(args, data_path=args.data_path) {
             tables_paths: [PREFIX + 'tables.json'],
             db_path: PREFIX + 'database',
         },
+        test: {
+            name: 'vitext2sql', 
+            paths: [PREFIX + 'test.json'],
+            tables_paths: [PREFIX + 'tables.json'],
+            db_path: PREFIX + 'database',
+        },
 
     },
     model+:{

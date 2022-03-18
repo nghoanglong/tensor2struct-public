@@ -173,7 +173,7 @@ function(args={}, data_path='data/spider/') {
         data_seed:  $.args.att,
         init_seed:  $.args.att,
 
-        keep_every_n: 1000,
+        keep_every_n: 200,
         eval_every_n: 100,
         save_threshold: $.args.save_threshold,
         save_every_n: 100,
