@@ -186,7 +186,7 @@ class SpiderDataset(torch.utils.data.Dataset):
                 self.dataset.table_path)
             self.results = []
 
-        def add(self, item, inferred_code, eval_file, orig_question=None):
+        def add(self, item, inferred_code, eval_file=None, orig_question=None):
             ret_dict = self.evaluator.evaluate_one(
                 item.schema.db_id, item.orig['query_toks'], inferred_code, eval_file)
             if orig_question:

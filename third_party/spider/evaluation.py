@@ -458,7 +458,7 @@ class Evaluator:
 
         return res
 
-    def evaluate_one(self, db_name, gold, predicted, eval_file):
+    def evaluate_one(self, db_name, gold, predicted, eval_file=None):
         def concatenate_toks(query_toks):
             decor_toks = map(lambda tok: tok.replace(" ", "_") if "\"" not in tok else tok, query_toks)
             res = " ".join(decor_toks)
@@ -507,9 +507,9 @@ class Evaluator:
         p_sql = rebuild_sql_val(p_sql)
         p_sql = rebuild_sql_col(p_valid_col_units, p_sql, kmap)
         
-        eval_file.write('question = {}\n'.format(gold))
-        eval_file.write('gold query = {}\n'.format(g_sql))
-        eval_file.write('predicted query = {}\n'.format(p_sql))
+        # eval_file.write('question = {}\n'.format(gold))
+        # eval_file.write('gold query = {}\n'.format(g_sql))
+        # eval_file.write('predicted query = {}\n'.format(p_sql))
         
         if self.etype in ["all", "exec"]:
             self.scores[hardness]['exec'] += eval_exec_match(self.db_paths[db_name], predicted, gold, p_sql, g_sql)

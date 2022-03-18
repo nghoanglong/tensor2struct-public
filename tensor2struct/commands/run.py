@@ -174,9 +174,7 @@ def eval_and_report(args, exp_config, model_config_args, logdir, infer_mod):
                 "\texact score:",
                 exact_match,
                 "\texec score:",
-                exec_match,
-                "\ttotal score:",
-                metrics["total_scores"]
+                exec_match
             )
 
             if exact_match > summary[f"{eval_section}-best-exact_match"]:
